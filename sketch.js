@@ -79,27 +79,6 @@ function nextBreathScenario() {
   } catch (e) { /* ignore */ }
   return scenario;
 }
-// pre question answers
-let preAnswers = {
-    q1: "",
-    q2: "",
-    q3: "",
-    q4: "",
-    q5: "",
-    q6: ""
-};
-
-let postAnswers = {
-    q1: "",
-    q2: "",
-    q3: "",
-    q4: "",
-    q5: "",
-    q6: "",
-    q7: ""
-};
-let postQ7Photo = null;
-let photoBase64 = "";
 let mic;
 let listeningForResponse = false;
 let responseTimeout = null;
@@ -533,65 +512,6 @@ function showChartTooltip(pointEl, record) {
   tooltip.style.top = (pointRect.top - wrapRect.top) + "px";
   tooltip.style.display = "block";
 }
-// setup question function 
-function setupQuestion(config) {
-
-    const input = document.getElementById(config.inputId);
-    const notSure = document.getElementById(config.notSureId);
-    const nextBtn = document.getElementById(config.nextBtnId);
-    const currentScreen = document.getElementById(config.currentScreenId);
-    const nextScreen = document.getElementById(config.nextScreenId);
-
-    // User types
-    input.addEventListener("input", function () {
-
-        if (input.value.trim() !== "") {
-
-            input.classList.add("selected");
-            notSure.classList.remove("selected");
-
-        } else {
-
-            input.classList.remove("selected");
-
-        }
-
-    });
-
-    // Not Sure
-    function handleNotSure() {
-
-        config.answerObject[config.questionKey] = "Not sure";
-
-        input.value = "";
-
-        input.classList.remove("selected");
-
-        notSure.classList.add("selected");
-
-    }
-
-    notSure.addEventListener("click", handleNotSure);
-    notSure.addEventListener("touchstart", handleNotSure);
-
-    // Next
-    function handleNext() {
-
-        config.answerObject[config.questionKey] = input.value.trim();
-
-    if (notSure.classList.contains("selected")) {
-        config.answerObject[config.questionKey] = "Not sure";
-    }
-
-    currentScreen.style.display = "none";
-    nextScreen.style.display = "flex";
-
-    }
-
-    nextBtn.addEventListener("click", handleNext);
-    nextBtn.addEventListener("touchstart", handleNext);
-
-}
 window.onload = () => {
     // Rewrite any <img>/<audio> src to the chosen language's version, if
     // one exists (falls back to English automatically otherwise).
@@ -614,35 +534,7 @@ window.onload = () => {
   const progressChartModeRecent = document.getElementById("progressChartModeRecent");
   const progressChartModeAll = document.getElementById("progressChartModeAll");
   const progressTooltip = document.getElementById("progressTooltip");
-  const preq1 = document.getElementById("preq1");
-  const preq1input = document.getElementById("preq1input");
-  const preq1Next = document.getElementById("preq1Next");
- const preq1NotSure = document.getElementById("preq1NotSure");
- const preq2 = document.getElementById("preq2");
-const preq3 = document.getElementById("preq3");
-    const preq4 = document.getElementById("preq4");
-    const preq5 = document.getElementById("preq5");
-    const preq6 = document.getElementById("preq6");
-    // postq
-    const postq1 = document.getElementById("postq1");
-    const postq2 = document.getElementById("postq2");
-    const postq3 = document.getElementById("postq3");
-    const postq4 = document.getElementById("postq4");
-    const postq5 = document.getElementById("postq5");
-    const postq6 = document.getElementById("postq6");
-    const postq7 = document.getElementById("postq7");
-    const postq7CameraBtn = document.getElementById("postq7CameraBtn");
-    const postq7CameraInput = document.getElementById("postq7CameraInput");
-    const postq7Input = document.getElementById("postq7input");
-   const postq7Preview = document.getElementById("postq7Preview");
-const photoPlaceholder = document.getElementById("photoPlaceholder");
-const postq7Next = document.getElementById("postq7Next");
-    postq7CameraBtn.onclick = () => {
 
-    postq7CameraInput.click();
-
-};
-    
     const begin1 = document.getElementById("begin1");
     const gender = document.getElementById("gender");
     const intro = document.getElementById("intro");
@@ -713,119 +605,6 @@ const postq7Next = document.getElementById("postq7Next");
     promiselateslowrajapress = document.getElementById("promiselateslowrajapress");
     promiselateslowrani = document.getElementById("promiselateslowrani");
     promiselateslowranipress = document.getElementById("promiselateslowranipress");
-    // setup quesions
-    //setup function call2
-    setupQuestion({
-    inputId: "preq2input",
-    notSureId: "preq2NotSure",
-    nextBtnId: "preq2Next",
-    currentScreenId: "preq2",
-    nextScreenId: "preq3",
-    answerObject: preAnswers,
-    questionKey: "q2"
-});
-    // sq3
-    setupQuestion({
-    inputId: "preq3input",
-    notSureId: "preq3NotSure",
-    nextBtnId: "preq3Next",
-    currentScreenId: "preq3",
-    nextScreenId: "preq4",
-    answerObject: preAnswers,
-    questionKey: "q3"
-});
-    //sq4
-    setupQuestion({
-    inputId: "preq4input",
-    notSureId: "preq4NotSure",
-    nextBtnId: "preq4Next",
-    currentScreenId: "preq4",
-    nextScreenId: "preq5",
-    answerObject: preAnswers,
-    questionKey: "q4"
-});
-    //sq5
-    setupQuestion({
-    inputId: "preq5input",
-    notSureId: "preq5NotSure",
-    nextBtnId: "preq5Next",
-    currentScreenId: "preq5",
-    nextScreenId: "preq6",
-    answerObject: preAnswers,
-    questionKey: "q5"
-});
-    //sq6
-    setupQuestion({
-    inputId: "preq6input",
-    notSureId: "preq6NotSure",
-    nextBtnId: "preq6Next",
-    currentScreenId: "preq6",
-    nextScreenId: "begin1",
-    answerObject: preAnswers,
-    questionKey: "q6"
-});
-    // postq setup questions
-    //setup function postq1
-    setupQuestion({
-    inputId: "postq1input",
-    notSureId: "postq1NotSure",
-    nextBtnId: "postq1Next",
-    currentScreenId: "postq1",
-    nextScreenId: "postq2",
-    answerObject: postAnswers,
-    questionKey: "q1"
-});
-    //postq2
-    setupQuestion({
-    inputId: "postq2input",
-    notSureId: "postq2NotSure",
-    nextBtnId: "postq2Next",
-    currentScreenId: "postq2",
-    nextScreenId: "postq3",
-    answerObject: postAnswers,
-    questionKey: "q2"
-});
-    //postq3
-    setupQuestion({
-    inputId: "postq3input",
-    notSureId: "postq3NotSure",
-    nextBtnId: "postq3Next",
-    currentScreenId: "postq3",
-    nextScreenId: "postq4",
-    answerObject: postAnswers,
-    questionKey: "q3"
-});
-    //postq4
-    setupQuestion({
-    inputId: "postq4input",
-    notSureId: "postq4NotSure",
-    nextBtnId: "postq4Next",
-    currentScreenId: "postq4",
-    nextScreenId: "postq5",
-    answerObject: postAnswers,
-    questionKey: "q4"
-});
-    //postq5
-    setupQuestion({
-    inputId: "postq5input",
-    notSureId: "postq5NotSure",
-    nextBtnId: "postq5Next",
-    currentScreenId: "postq5",
-    nextScreenId: "postq6",
-    answerObject: postAnswers,
-    questionKey: "q5"
-});
-    //postq6
-    setupQuestion({
-    inputId: "postq6input",
-    notSureId: "postq6NotSure",
-    nextBtnId: "postq6Next",
-    currentScreenId: "postq6",
-    nextScreenId: "postq7",
-    answerObject: postAnswers,
-    questionKey: "q6"
-});
-   
 
     // --- Button Element Definitions ---
     const consentBtn = document.getElementById("consentBtn");
@@ -872,6 +651,14 @@ const postq7Next = document.getElementById("postq7Next");
     const practiceagainbtnrani = document.getElementById("practiceagainbtnrani");
     const wpromisepress = document.getElementById("wpromisepress");
     const wranipromisepress = document.getElementById("wranipromisepress");
+    const practiceChoiceModal = document.getElementById("practiceChoiceModal");
+    const newCaseBtn = document.getElementById("newCaseBtn");
+    const onlyCompressionsBtn = document.getElementById("onlyCompressionsBtn");
+    const protocolCheckModal = document.getElementById("protocolCheckModal");
+    const protocolYesBtn = document.getElementById("protocolYesBtn");
+    const protocolNoBtn = document.getElementById("protocolNoBtn");
+    const protocolInfoModal = document.getElementById("protocolInfoModal");
+    const protocolStartBtn = document.getElementById("protocolStartBtn");
 
     // ========================================
     // DIAL PAD LOGIC
@@ -1013,96 +800,11 @@ const postq7Next = document.getElementById("postq7Next");
         } catch (e) { /* localStorage unavailable, ignore */ }
 
         nameEntry.style.display = "none";
-        preq1.style.display = "flex";
+        begin1.style.display = "flex";
     };
     nameNext.onclick = handleNameNext;
     nameNext.addEventListener('touchstart', handleNameNext);
-    preq1input.addEventListener("input", function () {
 
-    if (preq1input.value.trim() !== "") {
-
-        preq1input.classList.add("selected");
-        preq1NotSure.classList.remove("selected");
-
-    } else {
-
-        preq1input.classList.remove("selected");
-
-    }
-
-});
-
-
-  const handlePreQ1Next = () => {
-
-    if (preq1input.value.trim() !== "") {
-        preAnswers.q1 = preq1input.value;
-    }
-
-    preq1.style.display = "none";
-    preq2.style.display = "flex";
-
-    console.log(preAnswers.q1);
-};
-  preq1Next.onclick = handlePreQ1Next;
-  preq1Next.addEventListener('touchstart', handlePreQ1Next);
-const handlePreQ1NotSure = () => {
-
-    // save answer
-    preAnswers.q1 = "Not sure";
-
-    // clear input
-    preq1input.value = "";
-    preq1input.classList.remove("selected");
-
-    // highlight button
-    preq1NotSure.classList.add("selected");
-};
-
-
-preq1NotSure.addEventListener("click", handlePreQ1NotSure);
-preq1NotSure.addEventListener("touchstart", handlePreQ1NotSure);
-
-postq7CameraInput.addEventListener("change", (event) => {
-
-    const file = event.target.files[0];
-
-    if (!file) return;
-
-    // Save the photo
-    postQ7Photo = file;
-
-    const reader = new FileReader();
-
-    reader.onload = function(e){
-
-    // Save the image for uploading later
-    photoBase64 = e.target.result;
-
-    // Show preview
-    postq7Preview.src = photoBase64;
-    postq7Preview.style.display = "block";
-
-    photoPlaceholder.style.display = "none";
-
-    console.log("Photo size:", photoBase64.length);
-};
-
-    reader.readAsDataURL(file);
-
-});
-
-    const handlePostQ7Next = () => {
-
-    postAnswers.q7 = postq7Input.value;
-
-    logSession();
-
-    showPromiseScreen();
-};
-postq7Next.onclick = handlePostQ7Next;
-postq7Next.addEventListener("touchstart", handlePostQ7Next);
-    
   const handleBegin = () => {
         userStartAudio();
         mic.start();
@@ -1113,20 +815,56 @@ postq7Next.addEventListener("touchstart", handlePostQ7Next);
     beginBtn.onclick = handleBegin;
     beginBtn.addEventListener('touchstart', handleBegin);
 
+    // Tapping the intro bubble used to jump straight to cpr5 (skipping
+    // the whole check-danger/response/breathing flow). It now first asks
+    // whether the learner has already followed the check-call-compress
+    // protocol. The intro screen stays visible (dimmed) behind the
+    // modal — same pattern as the practice-again modal — so nothing
+    // needs to be hidden just to open it.
     const handleBubbleShortcut = () => {
         userStartAudio();
+        introAudio.pause();
+        introAudio.currentTime = 0;
+        protocolCheckModal.style.display = "flex";
+    };
+    beginBubBtn.onclick = handleBubbleShortcut;
+    beginBubBtn.addEventListener('touchstart', handleBubbleShortcut);
+
+    // "Yes" — same shortcut as before: skip straight to cpr5.
+    const handleProtocolYes = () => {
         [t1, t2, t3, t4, t5, t6, tOkOk, tHmHm].forEach(t => clearTimeout(t));
+        protocolCheckModal.style.display = "none";
         begin1.style.display = "none";
         intro.style.display = "none";
         cpr4.style.display = "none";
         cpr5.style.display = "flex";
-        introAudio.pause();
-        introAudio.currentTime = 0;
         cprC4aud.stop();
         cprBeginaud.play();
     };
-    beginBubBtn.onclick = handleBubbleShortcut;
-    beginBubBtn.addEventListener('touchstart', handleBubbleShortcut);
+    protocolYesBtn.onclick = handleProtocolYes;
+    protocolYesBtn.addEventListener('touchstart', handleProtocolYes);
+
+    // "No, I am not aware of this protocol" — swap to the second modal,
+    // which explains the protocol and offers to start proper training.
+    const handleProtocolNo = () => {
+        protocolCheckModal.style.display = "none";
+        protocolInfoModal.style.display = "flex";
+    };
+    protocolNoBtn.onclick = handleProtocolNo;
+    protocolNoBtn.addEventListener('touchstart', handleProtocolNo);
+
+    // "Start" on the second modal — begin the full training flow from
+    // checkdanger, same entry point as the normal "Start" button on the
+    // intro screen.
+    const handleProtocolStart = () => {
+        protocolInfoModal.style.display = "none";
+        begin1.style.display = "none";
+        intro.style.display = "none";
+        checkdanger.style.display = "flex";
+        checkdAudio.play();
+    };
+    protocolStartBtn.onclick = handleProtocolStart;
+    protocolStartBtn.addEventListener('touchstart', handleProtocolStart);
 
     const handleRaja = () => {
         genderState = 1;
@@ -1586,7 +1324,8 @@ postq7Next.addEventListener("touchstart", handlePostQ7Next);
 
     win.style.display = "none";
 
-    postq1.style.display = "flex";
+    logSession();
+    showPromiseScreen();
 
 };
     nextwinBtn.onclick = handleNextWin;
@@ -1614,29 +1353,62 @@ postq7Next.addEventListener("touchstart", handlePostQ7Next);
 
     const handlePracticeAgainRaja = () => {
         console.log("raja.....");
-        promisesealedraja.style.display = "none";
-        begin1.style.display = "flex";
-        reset();
-        dialDisplay.textContent = "995";
-        dialDisplay.classList.add("empty");
-        callBtn.disabled = true;
-        callBtn.style.opacity = 0.5;
+        practiceChoiceModal.style.display = "flex";
     };
     practiceagainbtnraja.onclick = handlePracticeAgainRaja;
     practiceagainbtnraja.addEventListener('touchstart', handlePracticeAgainRaja);
 
     const handlePracticeAgainRani = () => {
         console.log("rani.....");
+        practiceChoiceModal.style.display = "flex";
+    };
+    practiceagainbtnrani.onclick = handlePracticeAgainRani;
+    practiceagainbtnrani.addEventListener('touchstart', handlePracticeAgainRani);
+
+    // "Practice again" choice modal: take a whole new case (back to
+    // begin1, same as before) or skip straight to compressions-only
+    // practice (same shortcut as the begin1 bubble button). Both
+    // handlers also hide whichever "sealed" screen was showing
+    // underneath the modal, since the buttons that open the modal no
+    // longer hide it themselves.
+    const handleNewCase = () => {
+        practiceChoiceModal.style.display = "none";
+        promisesealedraja.style.display = "none";
         promisesealedrani.style.display = "none";
         begin1.style.display = "flex";
         reset();
-        dialDisplay.textContent = "995";
+        dialDisplay.textContent = "112/108";
         dialDisplay.classList.add("empty");
         callBtn.disabled = true;
         callBtn.style.opacity = 0.5;
     };
-    practiceagainbtnrani.onclick = handlePracticeAgainRani;
-    practiceagainbtnrani.addEventListener('touchstart', handlePracticeAgainRani);
+    newCaseBtn.onclick = handleNewCase;
+    newCaseBtn.addEventListener('touchstart', handleNewCase);
+
+    const handleOnlyCompressions = () => {
+        practiceChoiceModal.style.display = "none";
+        promisesealedraja.style.display = "none";
+        promisesealedrani.style.display = "none";
+        userStartAudio();
+        [t1, t2, t3, t4, t5, t6, tOkOk, tHmHm].forEach(t => clearTimeout(t));
+        begin1.style.display = "none";
+        intro.style.display = "none";
+        cpr4.style.display = "none";
+        cpr5.style.display = "flex";
+        introAudio.pause();
+        introAudio.currentTime = 0;
+        cprC4aud.stop();
+        cprBeginaud.play();
+        // cpr5 is already on screen by this point, so if anything below
+        // throws, the learner still sees CPR5 rather than a blank screen.
+        reset();
+        dialDisplay.textContent = "112/108";
+        dialDisplay.classList.add("empty");
+        callBtn.disabled = true;
+        callBtn.style.opacity = 0.5;
+    };
+    onlyCompressionsBtn.onclick = handleOnlyCompressions;
+    onlyCompressionsBtn.addEventListener('touchstart', handleOnlyCompressions);
 
     // ========================================
     // CHECK PROGRESS BUTTON
@@ -1725,7 +1497,8 @@ postq7Next.addEventListener("touchstart", handlePostQ7Next);
 
     amb.style.display = "none";
 
-    postq1.style.display = "flex";
+    logSession();
+    showPromiseScreen();
 
 };
     
@@ -1757,7 +1530,8 @@ postq7Next.addEventListener("touchstart", handlePostQ7Next);
 
     aed.style.display = "none";
 
-    postq1.style.display = "flex";
+    logSession();
+    showPromiseScreen();
 
 };
     nextaedBtn.onclick = handleNextAed;
@@ -1788,7 +1562,8 @@ postq7Next.addEventListener("touchstart", handlePostQ7Next);
 
     lateinactive.style.display = "none";
 
-    postq1.style.display = "flex";
+    logSession();
+    showPromiseScreen();
 
 };
     nextlateinactiveBtn.onclick = handleNextLateInactive;
@@ -1822,7 +1597,8 @@ postq7Next.addEventListener("touchstart", handlePostQ7Next);
 
     latefast.style.display = "none";
 
-    postq1.style.display = "flex";
+    logSession();
+    showPromiseScreen();
 
 };
     nextlatefastBtn.onclick = handleNextLateFast;
@@ -1853,7 +1629,8 @@ postq7Next.addEventListener("touchstart", handlePostQ7Next);
 
     lateslow.style.display = "none";
 
-    postq1.style.display = "flex";
+    logSession();
+    showPromiseScreen();
 
 };
     nextlateslowBtn.onclick = handleNextLateSlow;
@@ -2313,8 +2090,6 @@ function showLateSlowPromise() {
 
 function showPromiseScreen() {
 
-    document.getElementById("postq7").style.display = "none";
-
     switch (currentState) {
 
         case "win":
@@ -2384,33 +2159,13 @@ async function logSession() {
     gender: genderState === 1 ? "Raja" : "Rani",
 
     goodCompressions: good_compression,
-    targetCompressions: maxTotalCompressions,
+    targetCompressions: maxTotalCompressions
 
-    // PRE QUESTIONS
-    preQ1: preAnswers.q1,
-    preQ2: preAnswers.q2,
-    preQ3: preAnswers.q3,
-    preQ4: preAnswers.q4,
-    preQ5: preAnswers.q5,
-    preQ6: preAnswers.q6,
-
-    // POST QUESTIONS
-    postQ1: postAnswers.q1,
-    postQ2: postAnswers.q2,
-    postQ3: postAnswers.q3,
-    postQ4: postAnswers.q4,
-    postQ5: postAnswers.q5,
-    postQ6: postAnswers.q6,
-    postQ7: postAnswers.q7,
-
-    // PHOTO
-    photo: photoBase64
 };
 
     console.log("Logging:", data);
 
     try {
-        console.log(data.photo.substring(0,80));
         const response = await fetch(scriptURL, {
             method: "POST",
             body: JSON.stringify(data)
@@ -2460,48 +2215,6 @@ function reset() {
     currentState = "blank";
 
     sessionLogged = false;
-
-    // -------------------------
-    // Reset pre-question answers
-    // -------------------------
-    preAnswers = {
-        q1: "",
-        q2: "",
-        q3: "",
-        q4: "",
-        q5: "",
-        q6: ""
-    };
-
-    // -------------------------
-    // Reset post-question answers
-    // -------------------------
-    postAnswers = {
-        q1: "",
-        q2: "",
-        q3: "",
-        q4: "",
-        q5: "",
-        q6: "",
-        q7: ""
-    };
-
-    // -------------------------
-    // Reset photo
-    // -------------------------
-    photoBase64 = "";
-    postQ7Photo = null;
-
-    // -------------------------
-    // Clear UI
-    // -------------------------
-    postq7Input.value = "";
-
-    postq7Preview.src = "";
-    postq7Preview.style.display = "none";
-
-    photoPlaceholder.style.display = "flex";
-    
 }
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
