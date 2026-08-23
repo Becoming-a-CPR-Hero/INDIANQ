@@ -1344,3 +1344,69 @@ left: 5vw; }
   width: 100%;
   margin-top: 22px;
 }
+
+/* ========================================
+   TUTORIAL SCREEN
+   (Shown after "Begin", before gender select — instructs the
+   learner to place their phone on the cardboard dummy.)
+   Uses the same default centered layout as #begin1 (no
+   justify-content/padding-top override) so the whole group always
+   stays within whatever viewport height is actually visible — this
+   keeps the Done button from being pushed off-screen on Chrome
+   mobile, where the address bar eats into the visible height.
+   ======================================== */
+.tutorialBubble {
+  position: relative;
+  background: #fff;
+  color: #000;
+  font-family: 'Albert Sans', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.35;
+  text-align: left;
+  border-radius: 20px;
+  padding: 20px 22px;
+  width: 80vw;
+  max-width: 340px;
+  box-sizing: border-box;
+  margin-bottom: 24px;
+}
+
+.tutorialBubbleTail {
+  position: absolute;
+  bottom: -14px;
+  left: 32px;
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 16px solid #fff;
+}
+
+.tutorialPhoto {
+  width: 80vw;
+  max-width: 340px;
+  height: auto;
+  border-radius: 20px;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 24px;
+}
+
+.tutorialDoneBtn {
+  background: #C6E45C;
+  color: #F25C3B;
+  font-family: 'Albert Sans', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  text-align: center;
+  padding: 16px 44px;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.tutorialDoneBtn:active {
+  transform: scale(0.97);
+}
