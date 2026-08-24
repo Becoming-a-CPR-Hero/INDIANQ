@@ -1729,89 +1729,203 @@ function mousePressed() {
     }
 }
 
-function playScreen() {
-    image(playimg, width / 2, height / 2);
-    //image(heartimg, width * 0.9, height * 0.08);
+// =====================================================
+// PLAY SCREEN — CPR compression visual feedback
+//
+//   1) Meter card (top-left): a live verdict — "Perfect!" /
+//      "Press faster" / "Press slower" — plus the BPM gauge
+//      and number, all colour-matched (green = good, red = bad).
+//   2) A blood vessel running down the left side of the screen.
+//      It turns RED and gently pulses while the rhythm stays in
+//      the 100–120 BPM zone (blood reaching the brain), and turns
+//      flat BLUE the instant the rhythm drifts outside that zone
+//      (blood flow reducing) — matching the reference art.
+//   3) The face on the right: its cheek/lip colour is tied to
+//      `progress`, which only builds up from SUSTAINED good
+//      compressions and drains every frame otherwise — so it
+//      reflects blood actually reaching the brain over time, not
+//      just the current instantaneous rhythm.
+// =====================================================
+
+// progress is the "has blood actually reached the brain" meter:
+// it constantly drains, and only good compressions top it back up
+// (see handle_live()). Constrained here once per frame.
+function updateFlowProgress() {
+    progress -= 1;
+    progress = constrain(progress, 6, 210);
+}
+
+// Reads the current bpm and returns everything the meter card and
+// the vessel need, so the two stay perfectly in sync.
+function getFlowFeedback() {
+    if (bpm === 0) {
+        return {
+            label: "Start pressing",
+            badgeCol: color(150, 150, 150),
+            bpmCol: color(120, 120, 120),
+            vesselCol: color(90, 150, 230),   // blue = no flow yet
+            flowLabel: "Blood flow reducing",
+            good: false
+        };
+    }
+    if (bpm >= 100 && bpm <= 120) {
+        return {
+            label: "Perfect!",
+            badgeCol: color(3, 134, 96),      // green
+            bpmCol: color(3, 134, 96),
+            vesselCol: color(255, 80, 88),    // red = blood is flowing
+            flowLabel: "Good blood flow",
+            good: true
+        };
+    }
+    if (bpm > 120) {
+        return {
+            label: "Press slower",
+            badgeCol: color(255, 80, 88),     // red badge = wrong rhythm
+            bpmCol: color(255, 80, 88),
+            vesselCol: color(90, 150, 230),   // blue = flow reducing
+            flowLabel: "Blood flow reducing",
+            good: false
+        };
+    }
+    return {
+        label: "Press faster",
+        badgeCol: color(255, 80, 88),
+        bpmCol: color(255, 80, 88),
+        vesselCol: color(90, 150, 230),
+        flowLabel: "Blood flow reducing",
+        good: false
+    };
+}
+
+// Small rounded card, top-left: coloured verdict badge (text reads
+// bottom-to-top) + mini BPM gauge + coloured BPM number underneath.
+function drawMeterCard(fb) {
+    const cardX = 14, cardY = 14;
+    const cardW = min(width * 0.62, 250);
+    const cardH = 96;
 
     push();
     noStroke();
-    fill("#EEEEEE");
-    rect(122, 44, 200, 11, 11);
+    fill(255);
+    rect(cardX, cardY, cardW, cardH, 20);
     pop();
 
+    // coloured verdict badge
+    const badgeW = 30, badgeH = cardH - 18;
+    const badgeX = cardX + 10, badgeY = cardY + 9;
+    push();
+    noStroke();
+    fill(fb.badgeCol);
+    rect(badgeX, badgeY, badgeW, badgeH, 12);
+    pop();
+
+    push();
+    angleMode(RADIANS);
+    translate(badgeX + badgeW / 2, badgeY + badgeH - 8);
+    rotate(-HALF_PI);
+    textAlign(LEFT, CENTER);
+    textSize(10);
+    textStyle(BOLD);
+    fill(255);
+    text(fb.label, 0, 0);
+    textStyle(NORMAL);
+    pop();
+
+    // mini gauge + arrow (reuses the existing dial artwork)
+    const meterX = badgeX + badgeW + 40, meterY = cardY + 34;
     push();
     imageMode(CENTER);
-    image(meterimg, 78, 48);
+    image(meterimg, meterX, meterY, 62, 62);
     pop();
 
     push();
-    angleMode(RADIANS);
-    translate(20, 48);
-    rotate(-HALF_PI);
-    textAlign(CENTER, TOP);
-    textSize(23);
-    fill(250, 50, 60);
-    text(round(bpm), 0, 0);
-    pop();
-
-    push();
-    angleMode(RADIANS);
-    translate(30, 335);
-    rotate(-HALF_PI);
-    textAlign(CENTER, TOP);
-    textSize(23);
-    fill(0);
-    let numberToDisplay;
-    if (compression_count === 0) {
-        numberToDisplay = 0;
-    } else if (compression_count % 5 === 0) {
-        numberToDisplay = compression_count;
-    } else {
-        numberToDisplay = compression_count % 5;
-    }
-    text(numberToDisplay + " AND", 0, 0);
-    pop();
-
-    push();
-    translate(83, 47);
+    translate(meterX, meterY - 1);
     imageMode(CENTER);
     angleMode(DEGREES);
     rotate(angle);
-    image(arrowimg, 0, 0);
+    image(arrowimg, 0, 0, 30, 30);
     pop();
 
+    // BPM number + caption, coloured to match the verdict
     push();
-    angleMode(RADIANS);
-    translate(106, 50);
-    rotate(-HALF_PI);
     textAlign(CENTER, TOP);
-    textSize(11);
     textStyle(BOLD);
-    fill(0);
-    text("BPM", 0, 0);
+    textSize(20);
+    fill(fb.bpmCol);
+    text(round(bpm), meterX, cardY + cardH - 36);
     textStyle(NORMAL);
+    textSize(10);
+    fill(120);
+    text("BPM", meterX, cardY + cardH - 16);
     pop();
+}
 
-    progress -= 1;
-    console.log(progress);
-    progress = constrain(progress, 6, 200);
+// Vertical "vessel" down the left edge — two pill-shaped chambers
+// that pulse red while blood is reaching the brain, or sit flat
+// blue while it isn't. Full-width tubes top and bottom suggest it
+// connects onward to the rest of the body/head off-screen.
+function drawBloodVessel(fb) {
+    const vx = 14;
+    const vw = min(width * 0.24, 110);
+    const tubeH = 26;
+    const vTop = 14 + 96 + 20;         // just below the meter card
+    const vBot = height - 90;
+    const gap = 10;
+    const chamberH = (vBot - vTop - gap) / 2;
 
+    // top + bottom connecting tubes
     push();
     noStroke();
-    fill("#FF5058");
-    rect(332, 44, -progress, 11, 11);
+    fill(fb.vesselCol);
+    rect(0, vTop - tubeH, width, tubeH);
+    rect(0, vBot, width, tubeH);
     pop();
 
+    // soft pulsing halo behind the chambers while flow is good
+    if (fb.good) {
+        const pulse = 6 + 4 * sin(frameCount * 0.15);
+        push();
+        noStroke();
+        fill(red(fb.vesselCol), green(fb.vesselCol), blue(fb.vesselCol), 90);
+        rect(vx - pulse, vTop - pulse, vw + pulse * 2, chamberH + pulse * 2, 26);
+        rect(vx - pulse, vTop + chamberH + gap - pulse, vw + pulse * 2, chamberH + pulse * 2, 26);
+        pop();
+    }
+
+    // the two chambers themselves
+    push();
+    noStroke();
+    fill(fb.vesselCol);
+    rect(vx, vTop, vw, chamberH, 22);
+    rect(vx, vTop + chamberH + gap, vw, chamberH, 22);
+    pop();
+
+    // vertical label running down the middle of the vessel
     push();
     angleMode(RADIANS);
-    translate(346, 50);
+    translate(vx + vw / 2, vTop + (vBot - vTop) / 2);
     rotate(-HALF_PI);
-    textAlign(CENTER, TOP);
-    textSize(11);
+    textAlign(CENTER, CENTER);
     textStyle(BOLD);
-    fill(0);
-    text("Blood flow", 0, 0);
+    textSize(13);
+    fill(255);
+    text(fb.flowLabel, 0, 0);
     textStyle(NORMAL);
+    pop();
+}
+
+// Victim's face on the right. Cheek/lip colour is driven by
+// `progress` (sustained good compressions), not the instantaneous
+// bpm, so it visibly fades in/out as blood actually reaches — or
+// stops reaching — the brain.
+function drawFace() {
+    const fx = width * 0.74, fy = height * 0.42;
+    const faceSize = min(width * 0.5, 220);
+
+    push();
+    imageMode(CENTER);
+    image(playimg, fx, fy, faceSize, faceSize);
     pop();
 
     cheekOpacity = map(progress, 6, 210, 40, 255);
@@ -1820,46 +1934,55 @@ function playScreen() {
     push();
     noStroke();
     fill(253, 175, 179, cheekOpacity);
-    circle(width * 0.7, height * 0.2, 132);
-    pop();
-
-    push();
-    noStroke();
-    fill(253, 175, 179, cheekOpacity);
-    circle(width * 0.7, height * 0.8, 132);
+    circle(fx, fy - height * 0.18, width * 0.22);
+    circle(fx, fy + height * 0.18, width * 0.22);
     pop();
 
     push();
     noStroke();
     fill(255, 124, 130, lipOpacity);
-    ellipse(width * 0.82, height * 0.5, 42, 120);
+    ellipse(fx + width * 0.09, fy, width * 0.07, width * 0.2);
+    pop();
+}
 
-    console.log(diffGoal);
+// Compression count + time-left, tucked along the bottom.
+function drawHud() {
+    let numberToDisplay;
+    if (compression_count === 0) {
+        numberToDisplay = 0;
+    } else if (compression_count % 5 === 0) {
+        numberToDisplay = compression_count;
+    } else {
+        numberToDisplay = compression_count % 5;
+    }
 
-    push();
-    angleMode(RADIANS);
-    translate(30, 520);
-    rotate(-HALF_PI);
-    textAlign(CENTER, TOP);
-    textSize(20);
-    fill(0);
     timeleft = task_time - play_elapsed;
     if (timeleft < 0) { timeleft = 0; }
-    text(round((timeleft / 1000), 0) + "s", 0, 0);
-    pop();
 
     push();
     angleMode(RADIANS);
-    translate(52, 520);
-    rotate(-HALF_PI);
-    textAlign(CENTER, TOP);
-    textSize(18);
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(16);
     fill(0);
-    text("Time left", 0, 0);
+    text(numberToDisplay + " compressions", width * 0.5, height - 44);
+    textSize(14);
+    fill(60);
+    text(round(timeleft / 1000) + "s left", width * 0.5, height - 22);
+    textStyle(NORMAL);
     pop();
+}
+
+function playScreen() {
+    updateFlowProgress();
+    const fb = getFlowFeedback();
+
+    drawBloodVessel(fb);
+    drawMeterCard(fb);
+    drawFace();
+    drawHud();
 
     lastTouchElapsed = (millis() - pressed_time);
-    console.log(lastTouchElapsed);
     handle_inactivity();
 }
 
