@@ -85,7 +85,7 @@ let responseTimeout = null;
 let breathScenario = "none"; // "none" | "abnormal" | "normal" — set by nextBreathScenario()
 let breathTimerInterval = null; // holds the setInterval id for the checkbreathing countdown badge
 let dialedNumber = ''; // <-- Dial Pad Variable
-let t1, t2, t3, t4, t5,t6;
+let t1, t2; // t3-t6 no longer needed — the CPR step chain now uses cprStepTimer (see goToCprStep)
 let tOkOk, tHmHm; // timers for the "ok ok" / "hm hm" filler audio after pressing speaker
 let canvas;
 let canvasActive = false;
@@ -576,6 +576,44 @@ window.onload = () => {
     cpr3 = document.getElementById("cpr3");
     cpr4 = document.getElementById("cpr4");
     cpr5 = document.getElementById("cpr5");
+
+    // ========================================
+    // CPR STEP TIMELINE (cpr1 -> cpr2 -> cpr3 -> cpr4 -> cpr5)
+    // Single shared timer/function drives BOTH the automatic advance
+    // (originally a chain of nested setTimeouts) and the manual "next"
+    // buttons. Previously, pressing "next" called stopAllCPRAudio(),
+    // which cleared every pending timer in the chain — so after one
+    // manual tap, none of the later steps had anything left to
+    // auto-advance them. Routing both paths through goToCprStep() means
+    // there is only ever one live timer, and every path (auto or
+    // manual) re-arms it, so the chain can never be orphaned.
+    // ========================================
+    let cprStepTimer = null;
+    const CPR_STEP_DELAY = 8000;
+    const cprSteps = [
+        { screen: cpr1, audio: cprC1aud },
+        { screen: cpr2, audio: cprC2aud },
+        { screen: cpr3, audio: cprC3aud },
+        { screen: cpr4, audio: cprC4aud },
+    ];
+
+    function goToCprStep(index) {
+        clearTimeout(cprStepTimer);
+        cprSteps.forEach(s => { s.audio.stop(); s.screen.style.display = "none"; });
+
+        if (index >= cprSteps.length) {
+            cpr5.style.display = "flex";
+            cprBeginaud.play();
+            return;
+        }
+
+        const step = cprSteps[index];
+        step.screen.style.display = "flex";
+        step.audio.play();
+
+        cprStepTimer = setTimeout(() => goToCprStep(index + 1), CPR_STEP_DELAY);
+    }
+
     p5Screen = document.getElementById("p5Screen");
     win = document.getElementById("win");
     promisewraja = document.getElementById("promisewraja");
@@ -841,7 +879,7 @@ window.onload = () => {
 
     // "Yes" — same shortcut as before: skip straight to cpr5.
     const handleProtocolYes = () => {
-        [t1, t2, t3, t4, t5, t6, tOkOk, tHmHm].forEach(t => clearTimeout(t));
+        [t1, t2, tOkOk, tHmHm, cprStepTimer].forEach(t => clearTimeout(t));
         protocolCheckModal.style.display = "none";
         begin1.style.display = "none";
         intro.style.display = "none";
@@ -1226,36 +1264,9 @@ window.onload = () => {
 
             t2 = setTimeout(() => {
                 victiminca.style.display = "none";
-                cpr1.style.display = "flex";
-                cprC1aud.play();
-
-                t3 = setTimeout(() => {
-                    cpr1.style.display = "none";
-                    cpr2.style.display = "flex";
-                    cprC2aud.play();
-                    cprC1aud.stop();
-
-                    t4 = setTimeout(() => {
-                        cpr2.style.display = "none";
-                        cpr3.style.display = "flex";
-                        cprC3aud.play();
-                        cprC2aud.stop();
-
-                        t5 = setTimeout(() => {
-                            cpr3.style.display = "none";
-                            cpr4.style.display = "flex";
-                            cprC4aud.play();
-                            cprC3aud.stop();
-
-                            t6 = setTimeout(() => {
-                                cpr4.style.display = "none";
-                                cpr5.style.display = "flex";
-                                cprBeginaud.play();
-                                cprC4aud.stop();
-                            }, 8000);
-                        }, 8000);
-                    }, 8000);
-                }, 8000);
+                // Hand off to the shared CPR step timeline (cpr1 -> cpr4 -> cpr5),
+                // which now drives both the auto-advance and the manual next buttons.
+                goToCprStep(0);
             }, 8000);
         }, 15000);
     };
@@ -1267,19 +1278,13 @@ window.onload = () => {
         addspeakeraud.stop();
         okokaud.stop();
         hmhmaud.stop();
-        cprC1aud.stop();
-        cprC2aud.stop();
-        cprC3aud.stop();
-        cprC4aud.stop();
-        [t1, t2, t3, t4, t5, t6, tOkOk, tHmHm].forEach(t => clearTimeout(t));
+        [t1, t2, tOkOk, tHmHm].forEach(t => clearTimeout(t));
     };
 
     const handleNextC1 = () => {
-        clearTimeout(t1);
+        clearTimeout(t1); clearTimeout(t2);
         stopAllCPRAudio();
-        cprC2aud.play();
-        cpr1.style.display = "none";
-        cpr2.style.display = "flex";
+        goToCprStep(1);
     };
     nextc1.onclick = handleNextC1;
     nextc1.addEventListener('touchstart', handleNextC1);
@@ -1287,36 +1292,29 @@ window.onload = () => {
     const handleNextC2 = () => {
         clearTimeout(t1); clearTimeout(t2);
         stopAllCPRAudio();
-        cprC3aud.play();
-        cpr2.style.display = "none";
-        cpr3.style.display = "flex";
+        goToCprStep(2);
     };
     nextc2.onclick = handleNextC2;
     nextc2.addEventListener('touchstart', handleNextC2);
 
     const handleNextC3 = () => {
-        clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+        clearTimeout(t1); clearTimeout(t2);
         stopAllCPRAudio();
-        cprC4aud.play();
-        cpr3.style.display = "none";
-        cpr4.style.display = "flex";
+        goToCprStep(3);
     };
     nextc3.onclick = handleNextC3;
     nextc3.addEventListener('touchstart', handleNextC3);
 
     const handleNextC4 = () => {
-        clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
+        clearTimeout(t1); clearTimeout(t2);
         stopAllCPRAudio();
-        cprBeginaud.play();
-        cpr4.style.display = "none";
-        cpr5.style.display = "flex";
+        goToCprStep(4);
     };
     nextc4.onclick = handleNextC4;
     nextc4.addEventListener('touchstart', handleNextC4);
 
     const handleStartCPR = () => {
-        clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
-        clearTimeout(t4); clearTimeout(t5);
+        clearTimeout(t1); clearTimeout(t2); clearTimeout(cprStepTimer);
         cpr5.style.display = "none";
         p5Screen.style.display = "flex";
         startCanvas();
@@ -1399,7 +1397,7 @@ window.onload = () => {
         promisesealedraja.style.display = "none";
         promisesealedrani.style.display = "none";
         userStartAudio();
-        [t1, t2, t3, t4, t5, t6, tOkOk, tHmHm].forEach(t => clearTimeout(t));
+        [t1, t2, tOkOk, tHmHm, cprStepTimer].forEach(t => clearTimeout(t));
         begin1.style.display = "none";
         intro.style.display = "none";
         cpr4.style.display = "none";
