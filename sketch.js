@@ -1920,13 +1920,11 @@ function drawBloodVessel(fb) {
 // bpm, so it visibly fades in/out as blood actually reaches — or
 // stops reaching — the brain.
 function drawFace() {
-    const fx = width * 0.74, fy = height * 0.42;
-    const faceSize = min(width * 0.5, 220);
-
-    push();
-    imageMode(CENTER);
-    image(playimg, fx, fy, faceSize, faceSize);
-    pop();
+    // Drawn at its natural size/aspect ratio, centered — same as the
+    // original artwork. Forcing it into a small square here was what
+    // squashed/distorted it; the card and vessel are meant to sit as
+    // HUD overlays IN FRONT of this, not the other way round.
+    image(playimg, width / 2, height / 2);
 
     cheekOpacity = map(progress, 6, 210, 40, 255);
     lipOpacity = map(progress, 6, 210, 120, 255);
@@ -1934,14 +1932,19 @@ function drawFace() {
     push();
     noStroke();
     fill(253, 175, 179, cheekOpacity);
-    circle(fx, fy - height * 0.18, width * 0.22);
-    circle(fx, fy + height * 0.18, width * 0.22);
+    circle(width * 0.7, height * 0.2, 132);
+    pop();
+
+    push();
+    noStroke();
+    fill(253, 175, 179, cheekOpacity);
+    circle(width * 0.7, height * 0.8, 132);
     pop();
 
     push();
     noStroke();
     fill(255, 124, 130, lipOpacity);
-    ellipse(fx + width * 0.09, fy, width * 0.07, width * 0.2);
+    ellipse(width * 0.82, height * 0.5, 42, 120);
     pop();
 }
 
@@ -1977,9 +1980,9 @@ function playScreen() {
     updateFlowProgress();
     const fb = getFlowFeedback();
 
-    drawBloodVessel(fb);
-    drawMeterCard(fb);
-    drawFace();
+    drawFace();          // background layer
+    drawBloodVessel(fb); // foreground HUD overlay
+    drawMeterCard(fb);   // foreground HUD overlay
     drawHud();
 
     lastTouchElapsed = (millis() - pressed_time);
