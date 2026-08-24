@@ -133,7 +133,7 @@ display: flex;
   width: 20vw   /* responsive size */
   cursor: pointer;
 }
-#nextprBtn,#nextaBtn,#nextc1,#nextc2,#nextc3,#nextc4{
+#nextprBtn,#nextaBtn{
   position: absolute;
   bottom: 6vh;    /* fallback for browsers without dvh support */
   bottom: 6dvh;   /* accounts for Chrome's address bar; also brought lower per feedback (was 14vh) */
@@ -1409,4 +1409,131 @@ left: 5vw; }
 
 .tutorialDoneBtn:active {
   transform: scale(0.97);
+}
+
+/* ========================================
+   CPR TECHNIQUE STEP SCREENS (cpr1–cpr4)
+   Card with instructional gif/photo, description, step-dot
+   indicator, and a circular "next" button — replaces the old
+   plain image + corner-arrow layout.
+   ======================================== */
+.cprStepScreen {
+  align-items: center;
+  padding: 0 8vw;
+  box-sizing: border-box;
+}
+
+.cprStepCard {
+  width: 84vw;
+  max-width: 340px;
+  aspect-ratio: 3 / 4;
+  max-height: 48vh;
+  background: #fff;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 9vh;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.cprStepMedia {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cprStepDesc {
+  width: 84vw;
+  max-width: 340px;
+  color: #fff;
+  font-family: 'Albert Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-top: 20px;
+}
+
+.cprStepFooter {
+  width: 84vw;
+  max-width: 340px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 18px;
+  margin-bottom: 4vh;
+}
+
+.cprStepDots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cprDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.cprDot.active {
+  background: #ffffff;
+}
+
+.cprNextWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cprNextLabel {
+  color: #fff;
+  font-family: 'Albert Sans', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cprNextBtn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease;
+}
+
+.cprNextBtn:active {
+  transform: scale(0.94);
+}
+
+/* Small compression-rate gauge badge, top-right — shown only on the
+   final CPR technique step (cpr4), which teaches the target rate. */
+.cprRateBadge {
+  position: absolute;
+  top: 5vh;
+  right: 5vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 5;
+}
+
+.cprRateLabel {
+  color: #fff;
+  font-family: 'Albert Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.25;
 }
