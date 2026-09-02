@@ -1750,7 +1750,12 @@ function playScreen() {
     rotate(-HALF_PI);
     textAlign(CENTER, TOP);
     textSize(23);
-    fill(250, 50, 60);
+  if (bpm >= 100 && bpm <= 120) {
+        fill(3, 134, 96);   // green — within the recommended 100-120 bpm range
+    } else {
+        fill(250, 50, 60); // red — too slow or too fast
+    }
+    //fill(250, 50, 60);
     text(round(bpm), 0, 0);
     pop();
 
