@@ -56,6 +56,7 @@ let scoreLoggedForAttempt = false;  // guards against logging the same attempt m
 const CHART_WINDOW_SIZE = 7;        // number of attempts shown in "recent" (zoomed-in) mode
 let chartMode = "recent";           // "recent" | "all" — toggled by the chart's view buttons
 let genderState = null;   // 1 = Raja, 0 = Rani
+let bpmFeedbackEnabled = true;   // true = show BPM meter/number/arrow on the play screen, false = hide it (set via the "only compressions" BPM-choice modal)
 
 // ========================================
 // BREATHING SCENARIO CYCLING
@@ -694,6 +695,9 @@ window.onload = () => {
     const practiceChoiceModal = document.getElementById("practiceChoiceModal");
     const newCaseBtn = document.getElementById("newCaseBtn");
     const onlyCompressionsBtn = document.getElementById("onlyCompressionsBtn");
+    const bpmChoiceModal = document.getElementById("bpmChoiceModal");
+    const withBpmBtn = document.getElementById("withBpmBtn");
+    const withoutBpmBtn = document.getElementById("withoutBpmBtn");
     const protocolCheckModal = document.getElementById("protocolCheckModal");
     const protocolYesBtn = document.getElementById("protocolYesBtn");
     const protocolNoBtn = document.getElementById("protocolNoBtn");
@@ -1383,6 +1387,7 @@ window.onload = () => {
         promisesealedraja.style.display = "none";
         promisesealedrani.style.display = "none";
         begin1.style.display = "flex";
+        bpmFeedbackEnabled = true; // full scenarios always show BPM feedback by default
         reset();
         dialDisplay.textContent = "112/108";
         dialDisplay.classList.add("empty");
@@ -1392,8 +1397,21 @@ window.onload = () => {
     newCaseBtn.onclick = handleNewCase;
     newCaseBtn.addEventListener('touchstart', handleNewCase);
 
+    // "Only compressions" no longer jumps straight in — it now asks
+    // whether the learner wants BPM feedback visible during the drill.
     const handleOnlyCompressions = () => {
         practiceChoiceModal.style.display = "none";
+        bpmChoiceModal.style.display = "flex";
+    };
+    onlyCompressionsBtn.onclick = handleOnlyCompressions;
+    onlyCompressionsBtn.addEventListener('touchstart', handleOnlyCompressions);
+
+    // Shared logic (previously inline in handleOnlyCompressions) that
+    // actually starts the compressions-only flow. `withBpm` controls
+    // whether the meter/number/arrow are drawn on the play screen.
+    const startOnlyCompressions = (withBpm) => {
+        bpmFeedbackEnabled = withBpm;
+        bpmChoiceModal.style.display = "none";
         promisesealedraja.style.display = "none";
         promisesealedrani.style.display = "none";
         userStartAudio();
@@ -1414,8 +1432,14 @@ window.onload = () => {
         callBtn.disabled = true;
         callBtn.style.opacity = 0.5;
     };
-    onlyCompressionsBtn.onclick = handleOnlyCompressions;
-    onlyCompressionsBtn.addEventListener('touchstart', handleOnlyCompressions);
+
+    const handleWithBpm = () => startOnlyCompressions(true);
+    withBpmBtn.onclick = handleWithBpm;
+    withBpmBtn.addEventListener('touchstart', handleWithBpm);
+
+    const handleWithoutBpm = () => startOnlyCompressions(false);
+    withoutBpmBtn.onclick = handleWithoutBpm;
+    withoutBpmBtn.addEventListener('touchstart', handleWithoutBpm);
 
     // ========================================
     // CHECK PROGRESS BUTTON
@@ -1733,31 +1757,32 @@ function playScreen() {
     image(playimg, width / 2, height / 2);
     //image(heartimg, width * 0.9, height * 0.08);
 
-    push();
-    noStroke();
-    fill("#EEEEEE");
-    rect(122, 44, 200, 11, 11);
-    pop();
+    if (bpmFeedbackEnabled) {
+        push();
+        noStroke();
+        fill("#EEEEEE");
+        rect(122, 44, 200, 11, 11);
+        pop();
 
-    push();
-    imageMode(CENTER);
-    image(meterimg, 78, 48);
-    pop();
+        push();
+        imageMode(CENTER);
+        image(meterimg, 78, 48);
+        pop();
 
-    push();
-    angleMode(RADIANS);
-    translate(20, 48);
-    rotate(-HALF_PI);
-    textAlign(CENTER, TOP);
-    textSize(23);
-  if (bpm >= 100 && bpm <= 120) {
-        fill(3, 134, 96);   // green — within the recommended 100-120 bpm range
-    } else {
-        fill(250, 50, 60); // red — too slow or too fast
+        push();
+        angleMode(RADIANS);
+        translate(20, 48);
+        rotate(-HALF_PI);
+        textAlign(CENTER, TOP);
+        textSize(23);
+        if (bpm >= 100 && bpm <= 120) {
+            fill(3, 134, 96);   // green — within the recommended 100-120 bpm range
+        } else {
+            fill(250, 50, 60); // red — too slow or too fast
+        }
+        text(round(bpm), 0, 0);
+        pop();
     }
-    //fill(250, 50, 60);
-    text(round(bpm), 0, 0);
-    pop();
 
     push();
     angleMode(RADIANS);
@@ -1777,25 +1802,27 @@ function playScreen() {
     text(numberToDisplay + " AND", 0, 0);
     pop();
 
-    push();
-    translate(83, 47);
-    imageMode(CENTER);
-    angleMode(DEGREES);
-    rotate(angle);
-    image(arrowimg, 0, 0);
-    pop();
+    if (bpmFeedbackEnabled) {
+        push();
+        translate(83, 47);
+        imageMode(CENTER);
+        angleMode(DEGREES);
+        rotate(angle);
+        image(arrowimg, 0, 0);
+        pop();
 
-    push();
-    angleMode(RADIANS);
-    translate(106, 50);
-    rotate(-HALF_PI);
-    textAlign(CENTER, TOP);
-    textSize(11);
-    textStyle(BOLD);
-    fill(0);
-    text("BPM", 0, 0);
-    textStyle(NORMAL);
-    pop();
+        push();
+        angleMode(RADIANS);
+        translate(106, 50);
+        rotate(-HALF_PI);
+        textAlign(CENTER, TOP);
+        textSize(11);
+        textStyle(BOLD);
+        fill(0);
+        text("BPM", 0, 0);
+        textStyle(NORMAL);
+        pop();
+    }
 
     progress -= 1;
     console.log(progress);
@@ -2240,4 +2267,3 @@ function touchStarted() {
         return false;
     }
 }
-
