@@ -1831,12 +1831,12 @@ function playScreen() {
     push();
     noStroke();
     fill("#FF5058");
-    rect(332, 44, -progress, 11, 11);
+    rect(322, 44, -progress, 11, 11);
     pop();
 
     push();
     angleMode(RADIANS);
-    translate(346, 50);
+    translate(328, 50);
     rotate(-HALF_PI);
     textAlign(CENTER, TOP);
     textSize(11);
