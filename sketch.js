@@ -102,7 +102,7 @@ let lipOpacity = 120;
 let play_start_time,play_elapsed = 0;
 // for active blood fill
 let goodfillRate = 100;
-let badfillRate = 50;
+let badfillRate = 30;
 let progress = 0;
 //bpm meter
 let angle = 0;
