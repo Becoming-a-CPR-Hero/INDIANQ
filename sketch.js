@@ -49,6 +49,7 @@ const KA_ASSETS_AVAILABLE = new Set([
   "ElevenLabs_2025-11-04T11_58_20_Alice_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2025-11-04T12_00_41_Alice_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2026-07-11T14_37_05_Alice - Clear, Engaging Educator_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-11-04T17_32_18_Alice_pre_sp100_s50_sb75_v3.mp3",
 ]);
 
 // Turns "filename.ext" into "filename_<lang>.ext" (unchanged for English,
