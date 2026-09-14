@@ -12,9 +12,28 @@ try {
   currentLang = localStorage.getItem("cprLang") || "en";
 } catch (e) { /* localStorage unavailable, default to English */ }
 
-// Turns "filename.ext" into "filename_<lang>.ext" (unchanged for English).
+// ----------------------------------------------------------------------
+// KA_ASSETS_AVAILABLE
+// Only filenames listed here have a real "_ka" translated version
+// uploaded to the site. Everything else falls straight back to the
+// English file with NO network request for a file that doesn't exist —
+// this is what prevents the flood of guaranteed 404s that was starving
+// the play-screen image loads and leaving the play screen blank.
+//
+// As you finish translating an asset, add its exact plain English
+// filename (the same string passed to loadLocalizedSound / the img src
+// in index.html) to this list. No other code changes needed.
+// ----------------------------------------------------------------------
+const KA_ASSETS_AVAILABLE = new Set([
+  // "ElevenLabs_2025-11-04T11_56_30_Alice_pre_sp100_s50_sb75_v3.mp3",
+  // "hero.png",
+]);
+
+// Turns "filename.ext" into "filename_<lang>.ext" (unchanged for English,
+// and unchanged for any file not yet listed in KA_ASSETS_AVAILABLE).
 function localizedPath(filename) {
   if (currentLang === "en") return filename;
+  if (!KA_ASSETS_AVAILABLE.has(filename)) return filename; // no _ka file yet — skip straight to English, no wasted request
   const dot = filename.lastIndexOf(".");
   if (dot === -1) return filename;
   return filename.slice(0, dot) + "_" + currentLang + filename.slice(dot);
@@ -45,6 +64,7 @@ function localizeStaticAssets() {
     if (el.dataset.i18nApplied) return;
     el.dataset.i18nApplied = "1";
     const orig = el.getAttribute("src");
+    if (!KA_ASSETS_AVAILABLE.has(orig)) return; // no _ka file yet — leave the English src as-is, no wasted request
     const localized = localizedPath(orig);
     if (localized === orig) return;
     el.onerror = function () {
@@ -155,16 +175,32 @@ let sessionLogged = false;
 // play screen
 let playimg,heartimg,meterimg,arrowimg;
 function preload(){
-  // play screen
-  //playimg = loadImage("eyes+ (2).png");
+  // play screen — these four are the core gameplay graphics. They are
+  // NOT localized (no language contains English text baked into them),
+  // so they always load the plain English file directly regardless of
+  // currentLang. Explicit success/failure callbacks mean a failed load
+  // logs clearly instead of silently leaving the variable pointing at a
+  // broken/zero-width image.
   playimg = loadImage(
-  "eyes+ (2).png",
-  () => console.log("PLAY IMAGE LOADED"),
-  (err) => console.log("PLAY IMAGE FAILED", err)
-);
-  heartimg = loadImage("heart.png");
-  meterimg = loadImage("bpm meter86.png");
-  arrowimg = loadImage("arrow2.png");
+    "eyes+ (2).png",
+    () => console.log("PLAY IMAGE LOADED"),
+    (err) => console.error("PLAY IMAGE FAILED", err)
+  );
+  heartimg = loadImage(
+    "heart.png",
+    null,
+    (err) => console.error("HEART IMAGE FAILED", err)
+  );
+  meterimg = loadImage(
+    "bpm meter86.png",
+    null,
+    (err) => console.error("METER IMAGE FAILED", err)
+  );
+  arrowimg = loadImage(
+    "arrow2.png",
+    null,
+    (err) => console.error("ARROW IMAGE FAILED", err)
+  );
   //sound
   respondedaud = loadLocalizedSound("ElevenLabs_2025-06-I am .mp3");
   respondednextaud = loadLocalizedSound("ElevenLabs_2025-06-16T10_02_51_Alice_pre_sp100_s50_sb75_v3.mp3");
@@ -1796,7 +1832,13 @@ function mousePressed() {
 }
 
 function playScreen() {
-    image(playimg, width / 2, height / 2);
+    // Guarded: an unguarded image() call on a failed/incomplete load
+    // throws and silently halts the rest of playScreen() for that frame
+    // — since background() runs every frame regardless, that's exactly
+    // what produced a blank skin-colored screen with nothing drawn on it.
+    if (playimg && playimg.width) {
+        image(playimg, width / 2, height / 2);
+    }
     //image(heartimg, width * 0.9, height * 0.08);
 
     if (bpmFeedbackEnabled) {
@@ -1808,7 +1850,9 @@ function playScreen() {
 
         push();
         imageMode(CENTER);
-        image(meterimg, 78, 48);
+        if (meterimg && meterimg.width) {
+            image(meterimg, 78, 48);
+        }
         pop();
 
         push();
@@ -1850,7 +1894,9 @@ function playScreen() {
         imageMode(CENTER);
         angleMode(DEGREES);
         rotate(angle);
-        image(arrowimg, 0, 0);
+        if (arrowimg && arrowimg.width) {
+            image(arrowimg, 0, 0);
+        }
         pop();
 
         push();
