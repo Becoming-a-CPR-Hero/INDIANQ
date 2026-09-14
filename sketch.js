@@ -156,7 +156,12 @@ let sessionLogged = false;
 let playimg,heartimg,meterimg,arrowimg;
 function preload(){
   // play screen
-  playimg = loadImage("eyes+ (2).png");
+  //playimg = loadImage("eyes+ (2).png");
+  playimg = loadImage(
+  "eyes+ (2).png",
+  () => console.log("PLAY IMAGE LOADED"),
+  (err) => console.log("PLAY IMAGE FAILED", err)
+);
   heartimg = loadImage("heart.png");
   meterimg = loadImage("bpm meter86.png");
   arrowimg = loadImage("arrow2.png");
