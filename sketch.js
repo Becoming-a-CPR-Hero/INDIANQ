@@ -26,7 +26,9 @@ try {
 // ----------------------------------------------------------------------
 const KA_ASSETS_AVAILABLE = new Set([
   "beginbub.png",
+  "intro (2).png",
   "selectrajarani.png",
+  "checkfordanger.png",
   "dangerbub-1.png",
   "check_for_response.mp3",
   "check_if_breathing.mp3",
