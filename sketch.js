@@ -907,6 +907,23 @@ window.onload = () => {
         nameEntry.style.display = "flex";
         //begin1.style.display = "flex";
       //logSession();
+
+        // Re-trigger load() on every localized <audio> element as part of
+        // this tap. localizeStaticAssets() already swapped these to their
+        // "_ka" src during window.onload, but that swap happened outside
+        // a user gesture — on mobile browsers (especially iOS Safari),
+        // reloading an <audio> element that way can silently revoke its
+        // permission to play later, even from an already-unlocked page.
+        // Reloading it again here, inside a real tap, re-establishes that
+        // permission so later programmatic .play() calls (e.g. from a
+        // setTimeout) aren't blocked. English mode is unaffected since
+        // its <audio> elements were never swapped/reloaded in the first
+        // place.
+        document.querySelectorAll("audio[src]").forEach(function (el) {
+            if (el.dataset.i18nApplied) {
+                el.load();
+            }
+        });
     };
     consentBtn.onclick = handleConsent;
     consentBtn.addEventListener('touchstart', handleConsent);
