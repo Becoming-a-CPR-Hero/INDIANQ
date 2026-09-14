@@ -56,7 +56,6 @@ let scoreLoggedForAttempt = false;  // guards against logging the same attempt m
 const CHART_WINDOW_SIZE = 7;        // number of attempts shown in "recent" (zoomed-in) mode
 let chartMode = "recent";           // "recent" | "all" — toggled by the chart's view buttons
 let genderState = null;   // 1 = Raja, 0 = Rani
-let bpmFeedbackEnabled = true;   // true = show BPM meter/number/arrow on the play screen, false = hide it (set via the "only compressions" BPM-choice modal)
 
 // ========================================
 // BREATHING SCENARIO CYCLING
@@ -80,7 +79,17 @@ function nextBreathScenario() {
   } catch (e) { /* ignore */ }
   return scenario;
 }
-let mic;
+// Created immediately (not inside setup()) so it exists the moment the
+// page loads. mic used to only get created once p5's setup() ran, which
+// only happens after every preload() asset has finished loading — if
+// someone tapped "Begin" before that finished (very possible right after
+// a language switch, since that reloads the page and has to re-fetch
+// every audio file fresh, including several "_ka" ones), mic was still
+// undefined and mic.start() threw. p5.AudioIn doesn't need setup() to
+// have run, just for the p5.sound script to have loaded — which it
+// already has by the time this file executes — so building it here
+// removes the race entirely.
+let mic = new p5.AudioIn();
 let listeningForResponse = false;
 let responseTimeout = null;
 let breathScenario = "none"; // "none" | "abnormal" | "normal" — set by nextBreathScenario()
@@ -102,7 +111,7 @@ let lipOpacity = 120;
 let play_start_time,play_elapsed = 0;
 // for active blood fill
 let goodfillRate = 100;
-let badfillRate = 30;
+let badfillRate = 50;
 let progress = 0;
 //bpm meter
 let angle = 0;
@@ -178,8 +187,6 @@ function setup() {
   console.log(breathScenario);
   maxTotalCompressions = floor(random(30, 130));
   task_time = 600 * maxTotalCompressions+3000;
-  mic = new p5.AudioIn();
-  //mic.start();
   imageMode(CENTER);
 }
 
@@ -695,9 +702,6 @@ window.onload = () => {
     const practiceChoiceModal = document.getElementById("practiceChoiceModal");
     const newCaseBtn = document.getElementById("newCaseBtn");
     const onlyCompressionsBtn = document.getElementById("onlyCompressionsBtn");
-    const bpmChoiceModal = document.getElementById("bpmChoiceModal");
-    const withBpmBtn = document.getElementById("withBpmBtn");
-    const withoutBpmBtn = document.getElementById("withoutBpmBtn");
     const protocolCheckModal = document.getElementById("protocolCheckModal");
     const protocolYesBtn = document.getElementById("protocolYesBtn");
     const protocolNoBtn = document.getElementById("protocolNoBtn");
@@ -1387,7 +1391,6 @@ window.onload = () => {
         promisesealedraja.style.display = "none";
         promisesealedrani.style.display = "none";
         begin1.style.display = "flex";
-        bpmFeedbackEnabled = true; // full scenarios always show BPM feedback by default
         reset();
         dialDisplay.textContent = "112/108";
         dialDisplay.classList.add("empty");
@@ -1397,21 +1400,8 @@ window.onload = () => {
     newCaseBtn.onclick = handleNewCase;
     newCaseBtn.addEventListener('touchstart', handleNewCase);
 
-    // "Only compressions" no longer jumps straight in — it now asks
-    // whether the learner wants BPM feedback visible during the drill.
     const handleOnlyCompressions = () => {
         practiceChoiceModal.style.display = "none";
-        bpmChoiceModal.style.display = "flex";
-    };
-    onlyCompressionsBtn.onclick = handleOnlyCompressions;
-    onlyCompressionsBtn.addEventListener('touchstart', handleOnlyCompressions);
-
-    // Shared logic (previously inline in handleOnlyCompressions) that
-    // actually starts the compressions-only flow. `withBpm` controls
-    // whether the meter/number/arrow are drawn on the play screen.
-    const startOnlyCompressions = (withBpm) => {
-        bpmFeedbackEnabled = withBpm;
-        bpmChoiceModal.style.display = "none";
         promisesealedraja.style.display = "none";
         promisesealedrani.style.display = "none";
         userStartAudio();
@@ -1432,14 +1422,8 @@ window.onload = () => {
         callBtn.disabled = true;
         callBtn.style.opacity = 0.5;
     };
-
-    const handleWithBpm = () => startOnlyCompressions(true);
-    withBpmBtn.onclick = handleWithBpm;
-    withBpmBtn.addEventListener('touchstart', handleWithBpm);
-
-    const handleWithoutBpm = () => startOnlyCompressions(false);
-    withoutBpmBtn.onclick = handleWithoutBpm;
-    withoutBpmBtn.addEventListener('touchstart', handleWithoutBpm);
+    onlyCompressionsBtn.onclick = handleOnlyCompressions;
+    onlyCompressionsBtn.addEventListener('touchstart', handleOnlyCompressions);
 
     // ========================================
     // CHECK PROGRESS BUTTON
@@ -1757,32 +1741,26 @@ function playScreen() {
     image(playimg, width / 2, height / 2);
     //image(heartimg, width * 0.9, height * 0.08);
 
-    if (bpmFeedbackEnabled) {
-        push();
-        noStroke();
-        fill("#EEEEEE");
-        rect(122, 44, 150, 11, 11);
-        pop();
+    push();
+    noStroke();
+    fill("#EEEEEE");
+    rect(122, 44, 200, 11, 11);
+    pop();
 
-        push();
-        imageMode(CENTER);
-        image(meterimg, 78, 48);
-        pop();
+    push();
+    imageMode(CENTER);
+    image(meterimg, 78, 48);
+    pop();
 
-        push();
-        angleMode(RADIANS);
-        translate(20, 48);
-        rotate(-HALF_PI);
-        textAlign(CENTER, TOP);
-        textSize(23);
-        if (bpm >= 100 && bpm <= 120) {
-            fill(3, 134, 96);   // green — within the recommended 100-120 bpm range
-        } else {
-            fill(250, 50, 60); // red — too slow or too fast
-        }
-        text(round(bpm), 0, 0);
-        pop();
-    }
+    push();
+    angleMode(RADIANS);
+    translate(20, 48);
+    rotate(-HALF_PI);
+    textAlign(CENTER, TOP);
+    textSize(23);
+    fill(250, 50, 60);
+    text(round(bpm), 0, 0);
+    pop();
 
     push();
     angleMode(RADIANS);
@@ -1802,41 +1780,39 @@ function playScreen() {
     text(numberToDisplay + " AND", 0, 0);
     pop();
 
-    if (bpmFeedbackEnabled) {
-        push();
-        translate(83, 47);
-        imageMode(CENTER);
-        angleMode(DEGREES);
-        rotate(angle);
-        image(arrowimg, 0, 0);
-        pop();
-
-        push();
-        angleMode(RADIANS);
-        translate(106, 50);
-        rotate(-HALF_PI);
-        textAlign(CENTER, TOP);
-        textSize(11);
-        textStyle(BOLD);
-        fill(0);
-        text("BPM", 0, 0);
-        textStyle(NORMAL);
-        pop();
-    }
-
-    progress -= 1;
-    console.log(progress);
-    progress = constrain(progress, 6, 150);
-
     push();
-    noStroke();
-    fill("#FF5058");
-    rect(272, 44, -progress, 11, 11);
+    translate(83, 47);
+    imageMode(CENTER);
+    angleMode(DEGREES);
+    rotate(angle);
+    image(arrowimg, 0, 0);
     pop();
 
     push();
     angleMode(RADIANS);
-    translate(277, 50);
+    translate(106, 50);
+    rotate(-HALF_PI);
+    textAlign(CENTER, TOP);
+    textSize(11);
+    textStyle(BOLD);
+    fill(0);
+    text("BPM", 0, 0);
+    textStyle(NORMAL);
+    pop();
+
+    progress -= 1;
+    console.log(progress);
+    progress = constrain(progress, 6, 200);
+
+    push();
+    noStroke();
+    fill("#FF5058");
+    rect(332, 44, -progress, 11, 11);
+    pop();
+
+    push();
+    angleMode(RADIANS);
+    translate(346, 50);
     rotate(-HALF_PI);
     textAlign(CENTER, TOP);
     textSize(11);
