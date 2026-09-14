@@ -25,8 +25,18 @@ try {
 // in index.html) to this list. No other code changes needed.
 // ----------------------------------------------------------------------
 const KA_ASSETS_AVAILABLE = new Set([
-  // "ElevenLabs_2025-11-04T11_56_30_Alice_pre_sp100_s50_sb75_v3.mp3",
-  // "hero.png",
+  "beginbub.png",
+  "check_for_response.mp3",
+  "check_if_breathing.mp3",
+  "did_spongy_respond.mp3",
+  "could_you_see_breathing.mp3",
+  "ElevenLabs_2025-06-15T03_03_50_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-06-15T03_04_45_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-06-16T10_02_51_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-06-18T03_04_36_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-11-04T11_58_20_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-11-04T12_00_41_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2026-07-11T14_37_05_Alice - Clear, Engaging Educator_pre_sp100_s50_sb75_v3.mp3",
 ]);
 
 // Turns "filename.ext" into "filename_<lang>.ext" (unchanged for English,
