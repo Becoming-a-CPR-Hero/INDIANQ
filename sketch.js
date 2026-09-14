@@ -21,12 +21,18 @@ function localizedPath(filename) {
 }
 
 // Loads a sound through the current language's asset naming convention.
-// If the translated file is missing, logs a warning but doesn't crash —
-// that specific clip just won't play until the asset is supplied.
+// If the translated file is missing, falls back to the plain English
+// file (same behavior as the image/audio-tag fallback below) instead of
+// staying silent forever — so a partially-translated language pack still
+// plays every clip, just in English for the untranslated ones.
 function loadLocalizedSound(filename) {
-  return loadSound(localizedPath(filename), null, function () {
-    console.warn("Missing localized audio (falling back to silence):", localizedPath(filename));
+  const sound = loadSound(localizedPath(filename), null, function () {
+    console.warn("Missing localized audio, falling back to English:", localizedPath(filename));
+    if (currentLang !== "en") {
+      sound.setPath(filename);
+    }
   });
+  return sound;
 }
 
 // Rewrites every <img src> and <audio src> on the page to its "_<lang>"
@@ -57,6 +63,23 @@ const CHART_WINDOW_SIZE = 7;        // number of attempts shown in "recent" (zoo
 let chartMode = "recent";           // "recent" | "all" — toggled by the chart's view buttons
 let genderState = null;   // 1 = Raja, 0 = Rani
 let bpmFeedbackEnabled = true;   // true = show BPM meter/number/arrow on the play screen, false = hide it (set via the "only compressions" BPM-choice modal)
+
+// ========================================
+// MIC READINESS GUARD
+// mic (p5.AudioIn) is only created inside setup(), and p5 doesn't run
+// setup() until preload() fully finishes. When a language's audio files
+// don't exist yet (e.g. an unfinished translation), every
+// loadLocalizedSound() call in preload() has to wait for a real 404
+// round-trip before p5 considers that load "done" — this can push
+// setup() well past the moment the learner taps "Begin". Previously
+// handleBegin() called mic.start() unconditionally, so on a slow/failing
+// preload it could fire while mic was still undefined and crash. These
+// two flags let handleBegin() safely "queue" the mic start if setup()
+// hasn't run yet; setup() then honors that queued request as soon as
+// mic actually exists.
+// ========================================
+let micReady = false;
+let micStartRequested = false;
 
 // ========================================
 // BREATHING SCENARIO CYCLING
@@ -179,6 +202,13 @@ function setup() {
   maxTotalCompressions = floor(random(30, 130));
   task_time = 600 * maxTotalCompressions+3000;
   mic = new p5.AudioIn();
+  micReady = true;
+  if (micStartRequested) {
+    // "Begin" was already tapped before setup() finished (e.g. a slow
+    // preload waiting on 404s for an unfinished language) — honor that
+    // request now instead of leaving the mic unstarted.
+    mic.start();
+  }
   //mic.start();
   imageMode(CENTER);
 }
@@ -851,7 +881,14 @@ window.onload = () => {
 
   const handleBegin = () => {
         userStartAudio();
-        mic.start();
+        micStartRequested = true;
+        if (micReady) {
+            // setup() has already run and mic exists — start it right away.
+            mic.start();
+        }
+        // If setup() hasn't run yet (slow preload — e.g. an unfinished
+        // language whose audio files 404), setup() will call mic.start()
+        // itself as soon as it's ready, honoring micStartRequested above.
         begin1.style.display = "none";
         cardboardTutorial.style.display = "flex";
       //logSession();
@@ -2267,4 +2304,3 @@ function touchStarted() {
         return false;
     }
 }
-
