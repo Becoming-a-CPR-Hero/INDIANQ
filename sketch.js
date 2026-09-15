@@ -1390,7 +1390,7 @@ window.onload = () => {
                 // which now drives both the auto-advance and the manual next buttons.
                 goToCprStep(0);
             }, 10000);
-        }, 15000);
+        }, 18000);
     };
     speakerbtn.onclick = handleSpeaker;
     speakerbtn.addEventListener('touchstart', handleSpeaker);
