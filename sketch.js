@@ -25,7 +25,7 @@ try {
 // in index.html) to this list. No other code changes needed.
 // ----------------------------------------------------------------------
 const KA_ASSETS_AVAILABLE = new Set([
-  "beginbub.png",
+   "beginbub.png",
   "intro (2).png",
   "selectrajarani.png",
   "checkfordanger.png",
@@ -99,6 +99,41 @@ function localizeStaticAssets() {
     };
     el.src = localized;
     if (el.tagName === "AUDIO") el.load(); // audio elements need an explicit reload after changing src
+  });
+}
+
+// ----------------------------------------------------------------------
+// KA_TEXT — text translations
+// Some content (like the CPR step descriptions) is plain hardcoded text
+// in index.html, not an image or audio file, so it can't go through
+// localizedPath()/localizeStaticAssets() at all. This is a separate,
+// simple key -> translated-string dictionary for exactly that content.
+//
+// IMPORTANT: these are placeholder machine translations. Because this
+// is safety-critical CPR instruction text, have a fluent Kannada
+// speaker review/correct every entry before relying on it.
+//
+// How to add more: give the element a data-i18n-key="yourKey" attribute
+// in index.html, then add "yourKey": "..." below.
+// ----------------------------------------------------------------------
+const KA_TEXT = {
+  cpr1Desc: "ಕಂಕುಳದ ಕೆಳಗೆ ಒಂದು ಕೈಯನ್ನು ಇಟ್ಟು ನೇರವಾಗಿ ಎದೆಯ ಮಧ್ಯಭಾಗಕ್ಕೆ ಸರಿಸಿ.",
+  cpr2Desc: "ಈಗಾಗಲೇ ಇಟ್ಟಿರುವ ಕೈಯ ಮೇಲೆ ಇನ್ನೊಂದು ಕೈಯನ್ನು ಇಟ್ಟು, ಎರಡೂ ಕೈಗಳ ಬೆರಳುಗಳನ್ನು ಒಂದಕ್ಕೊಂದು ಬೆಸೆಯಿರಿ.",
+  cpr3Desc: "ನಿಮ್ಮ ಕೈಗಳನ್ನು ನೇರಗೊಳಿಸಿ, ಮೊಣಕೈಗಳನ್ನು ಬಿಗಿಗೊಳಿಸಿ, ಮತ್ತು ನಿಮ್ಮ ಭುಜಗಳನ್ನು ನೇರವಾಗಿ ಕೈಗಳ ಮೇಲೆ ಕೇಂದ್ರೀಕರಿಸಿ.",
+  cpr4Desc: "ಕೈಯ ಹಿಂಭಾಗದಿಂದ ಒತ್ತಡ ಪ್ರಾರಂಭಿಸಿ. ನಿಮಿಷಕ್ಕೆ 100-120 ಒತ್ತಡಗಳ ದರವನ್ನು ಕಾಪಾಡಿಕೊಳ್ಳಿ.",
+};
+
+// Swaps textContent for every element tagged with data-i18n-key to its
+// KA_TEXT translation. Falls back to leaving the original English text
+// in place if a key has no translation yet (same "never break, just
+// stay English" philosophy as the image/audio fallbacks above).
+function localizeText() {
+  if (currentLang === "en") return;
+  document.querySelectorAll("[data-i18n-key]").forEach(function (el) {
+    const key = el.dataset.i18nKey;
+    if (KA_TEXT[key]) {
+      el.textContent = KA_TEXT[key];
+    }
   });
 }
 
@@ -613,6 +648,8 @@ window.onload = () => {
     // Rewrite any <img>/<audio> src to the chosen language's version, if
     // one exists (falls back to English automatically otherwise).
     localizeStaticAssets();
+    // Swap hardcoded HTML text (e.g. CPR step descriptions) to Kannada.
+    localizeText();
 
     // --- Screen Element Definitions ---
    const langPicker = document.getElementById("langPicker");
@@ -1391,7 +1428,7 @@ window.onload = () => {
                 // Hand off to the shared CPR step timeline (cpr1 -> cpr4 -> cpr5),
                 // which now drives both the auto-advance and the manual next buttons.
                 goToCprStep(0);
-            }, 14000);
+            }, 10000);
         }, 15000);
     };
     speakerbtn.onclick = handleSpeaker;
