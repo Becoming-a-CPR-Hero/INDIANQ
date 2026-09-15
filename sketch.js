@@ -25,7 +25,7 @@ try {
 // in index.html) to this list. No other code changes needed.
 // ----------------------------------------------------------------------
 const KA_ASSETS_AVAILABLE = new Set([
-   "beginbub.png",
+  "beginbub.png",
   "intro (2).png",
   "selectrajarani.png",
   "checkfordanger.png",
@@ -56,6 +56,7 @@ const KA_ASSETS_AVAILABLE = new Set([
   "ElevenLabs_2026-07-11T14_37_05_Alice - Clear, Engaging Educator_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2025-11-04T17_32_18_Alice_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2025-06-28T05_17_33_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-06-25T03_15_33_Alice_pre_sp100_s50_sb75_v3.mp3",
 ]);
 
 // Turns "filename.ext" into "filename_<lang>.ext" (unchanged for English,
