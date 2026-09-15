@@ -1428,7 +1428,7 @@ window.onload = () => {
                 // Hand off to the shared CPR step timeline (cpr1 -> cpr4 -> cpr5),
                 // which now drives both the auto-advance and the manual next buttons.
                 goToCprStep(0);
-            }, 10000);
+            }, 14000);
         }, 15000);
     };
     speakerbtn.onclick = handleSpeaker;
