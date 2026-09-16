@@ -60,6 +60,8 @@ const KA_ASSETS_AVAILABLE = new Set([
   "lateslowpromisebub.png",
   "inactivepromisebub.png",
   "responsequestionbub.png",
+  "promisesealedrajatitle.png",
+  "promisesealedranititle.png",
   "check_for_response.mp3",
   "check_if_breathing.mp3",
   "did_spongy_respond.mp3",
