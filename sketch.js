@@ -39,6 +39,8 @@ const KA_ASSETS_AVAILABLE = new Set([
   "awscprraja.png",
   "dpromisesealbub.png",
   "dranipromisesealbub.png",
+  "NBrajapromisebub.png",
+  "NBranipromisebub.png",
   "cresponse.png",
   "yesbutton.png",
   "nobutton.png",
