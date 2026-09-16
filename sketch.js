@@ -25,7 +25,7 @@ try {
 // in index.html) to this list. No other code changes needed.
 // ----------------------------------------------------------------------
 const KA_ASSETS_AVAILABLE = new Set([
-  "beginbub.png",
+   "beginbub.png",
   "intro (2).png",
   "selectrajarani.png",
   "checkfordanger.png",
@@ -1049,6 +1049,7 @@ window.onload = () => {
     // "Yes" — same shortcut as before: skip straight to cpr5.
     const handleProtocolYes = () => {
         [t1, t2, tOkOk, tHmHm, cprStepTimer].forEach(t => clearTimeout(t));
+        victimaud.stop(); // was previously implicitly cancelled via clearTimeout(t2); no longer applicable now that the advance is driven by onended()
         protocolCheckModal.style.display = "none";
         begin1.style.display = "none";
         intro.style.display = "none";
@@ -1428,15 +1429,21 @@ window.onload = () => {
         t1 = setTimeout(() => {
             addedspeaker.style.display = "none";
             victiminca.style.display = "flex";
-            victimaud.play();
             addspeakeraud.stop();
 
-            t2 = setTimeout(() => {
+            // Advance exactly when victimaud actually finishes playing,
+            // instead of guessing a fixed delay. This self-adjusts for
+            // any language's clip length (English vs Kannada narration
+            // are different durations) with no dead air and no risk of
+            // cutting the audio off early.
+            victimaud.play();
+            victimaud.onended(() => {
+                if (victiminca.style.display === "none") return; // already navigated away (e.g. protocol shortcut)
                 victiminca.style.display = "none";
                 // Hand off to the shared CPR step timeline (cpr1 -> cpr4 -> cpr5),
                 // which now drives both the auto-advance and the manual next buttons.
                 goToCprStep(0);
-            }, 18000);
+            });
         }, 15000);
     };
     speakerbtn.onclick = handleSpeaker;
