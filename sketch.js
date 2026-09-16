@@ -25,7 +25,7 @@ try {
 // in index.html) to this list. No other code changes needed.
 // ----------------------------------------------------------------------
 const KA_ASSETS_AVAILABLE = new Set([
-   "beginbub.png",
+  "beginbub.png",
   "intro (2).png",
   "selectrajarani.png",
   "checkfordanger.png",
@@ -60,6 +60,7 @@ const KA_ASSETS_AVAILABLE = new Set([
   "ElevenLabs_2025-06-16T00_04_57_Alice_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2025-06-25T03_12_37_Alice_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2025-11-05T03_21_18_Alice_pre_sp100_s50_sb75_v3.mp3",
+
 ]);
 
 // Turns "filename.ext" into "filename_<lang>.ext" (unchanged for English,
@@ -197,7 +198,7 @@ let responseTimeout = null;
 let breathScenario = "none"; // "none" | "abnormal" | "normal" — set by nextBreathScenario()
 let breathTimerInterval = null; // holds the setInterval id for the checkbreathing countdown badge
 let dialedNumber = ''; // <-- Dial Pad Variable
-let t1, t2; // t3-t6 no longer needed — the CPR step chain now uses cprStepTimer (see goToCprStep)
+let t1, t2; // t3-t6 no longer needed — the CPR step chain now uses onended() (see goToCprStep)
 let tOkOk, tHmHm; // timers for the "ok ok" / "hm hm" filler audio after pressing speaker
 let canvas;
 let canvasActive = false;
@@ -721,17 +722,14 @@ window.onload = () => {
 
     // ========================================
     // CPR STEP TIMELINE (cpr1 -> cpr2 -> cpr3 -> cpr4 -> cpr5)
-    // Single shared timer/function drives BOTH the automatic advance
-    // (originally a chain of nested setTimeouts) and the manual "next"
-    // buttons. Previously, pressing "next" called stopAllCPRAudio(),
-    // which cleared every pending timer in the chain — so after one
-    // manual tap, none of the later steps had anything left to
-    // auto-advance them. Routing both paths through goToCprStep() means
-    // there is only ever one live timer, and every path (auto or
-    // manual) re-arms it, so the chain can never be orphaned.
+    // Single shared function drives BOTH the automatic advance and the
+    // manual "next" buttons. Each step now advances exactly when its own
+    // audio clip finishes (via onended()), instead of a fixed shared
+    // delay — a flat delay was cutting cprC4aud off mid-sentence whenever
+    // its actual runtime was longer than the guessed number, and would
+    // do the same for any other step/language whose clip runs longer.
     // ========================================
-    let cprStepTimer = null;
-    const CPR_STEP_DELAY = 8000;
+    let cprStepAdvancing = false; // guards against onended firing after a manual "next" has already moved on
     const cprSteps = [
         { screen: cpr1, audio: cprC1aud },
         { screen: cpr2, audio: cprC2aud },
@@ -740,7 +738,7 @@ window.onload = () => {
     ];
 
     function goToCprStep(index) {
-        clearTimeout(cprStepTimer);
+        cprStepAdvancing = false; // invalidate any onended() callback still pending from the previous step
         cprSteps.forEach(s => { s.audio.stop(); s.screen.style.display = "none"; });
 
         if (index >= cprSteps.length) {
@@ -753,7 +751,11 @@ window.onload = () => {
         step.screen.style.display = "flex";
         step.audio.play();
 
-        cprStepTimer = setTimeout(() => goToCprStep(index + 1), CPR_STEP_DELAY);
+        cprStepAdvancing = true;
+        step.audio.onended(() => {
+            if (!cprStepAdvancing) return; // this step was already left via manual "next" or a shortcut
+            goToCprStep(index + 1);
+        });
     }
 
     p5Screen = document.getElementById("p5Screen");
@@ -1048,7 +1050,8 @@ window.onload = () => {
 
     // "Yes" — same shortcut as before: skip straight to cpr5.
     const handleProtocolYes = () => {
-        [t1, t2, tOkOk, tHmHm, cprStepTimer].forEach(t => clearTimeout(t));
+        [t1, t2, tOkOk, tHmHm].forEach(t => clearTimeout(t));
+        cprStepAdvancing = false; // invalidate any pending onended() before cprC4aud.stop() below, in case stop() itself fires it
         victimaud.stop(); // was previously implicitly cancelled via clearTimeout(t2); no longer applicable now that the advance is driven by onended()
         protocolCheckModal.style.display = "none";
         begin1.style.display = "none";
@@ -1490,7 +1493,8 @@ window.onload = () => {
     nextc4.addEventListener('touchstart', handleNextC4);
 
     const handleStartCPR = () => {
-        clearTimeout(t1); clearTimeout(t2); clearTimeout(cprStepTimer);
+        clearTimeout(t1); clearTimeout(t2);
+        cprStepAdvancing = false; // guard against any stray onended() from a CPR step audio
         cpr5.style.display = "none";
         p5Screen.style.display = "flex";
         startCanvas();
@@ -1587,7 +1591,8 @@ window.onload = () => {
         promisesealedraja.style.display = "none";
         promisesealedrani.style.display = "none";
         userStartAudio();
-        [t1, t2, tOkOk, tHmHm, cprStepTimer].forEach(t => clearTimeout(t));
+        [t1, t2, tOkOk, tHmHm].forEach(t => clearTimeout(t));
+        cprStepAdvancing = false; // invalidate any pending onended() before cprC4aud.stop() below, in case stop() itself fires it
         begin1.style.display = "none";
         intro.style.display = "none";
         cpr4.style.display = "none";
