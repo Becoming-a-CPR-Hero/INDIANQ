@@ -33,6 +33,7 @@ const KA_ASSETS_AVAILABLE = new Set([
   "nowsafe.png",
   "cannotsafe.png",
   "dangerbub-1.png",
+  "can'tsafebub.png",
   "checkbtitle.png",
   "cresponse.png",
   "yesbutton.png",
