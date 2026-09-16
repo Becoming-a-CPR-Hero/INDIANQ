@@ -50,6 +50,7 @@ const KA_ASSETS_AVAILABLE = new Set([
   "victiminca.png",
   "normalbtn.png",
   "abnormalbtn.png",
+  "respondedbub.png",
   "responsequestionbub.png",
   "check_for_response.mp3",
   "check_if_breathing.mp3",
@@ -72,6 +73,7 @@ const KA_ASSETS_AVAILABLE = new Set([
   "ElevenLabs_2025-06-15T05_45_53_Alice_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2025-11-04T07_34_48_Alice_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2026-09-16T05_50_04_Anika - Sweet and Lively_pvc_sp100_s50_sb75_v3",
+  
 ]);
 
 // Turns "filename.ext" into "filename_<lang>.ext" (unchanged for English,
