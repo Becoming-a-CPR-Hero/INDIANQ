@@ -83,6 +83,9 @@ const KA_ASSETS_AVAILABLE = new Set([
   "ElevenLabs_2026-09-16T05_50_04_Anika - Sweet and Lively_pvc_sp100_s50_sb75_v3",
   "ElevenLabs_2025-06-17T23_01_53_Alice_pre_sp100_s50_sb75_v3.mp3",
   "ElevenLabs_2025-11-04T11_55_06_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-11-05T06_53_28_Alice_pre_sp100_s50_sb75_v3.mp3",
+  "ElevenLabs_2025-12-10T02_39_25_Alice_pre_sp100_s50_sb75_v3.mp3",
+  
   
 ]);
 
