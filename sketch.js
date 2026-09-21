@@ -13,6 +13,45 @@ try {
 } catch (e) { /* localStorage unavailable, default to English */ }
 
 // ----------------------------------------------------------------------
+// TAP HANDLING — fixes the Android "ghost click" double-advance bug
+//
+// The old pattern everywhere in this file was:
+//   el.onclick = handler;
+//   el.addEventListener('touchstart', handler);
+//
+// On Android Chrome, after a touchstart-driven handler changes the DOM
+// (hides the current screen, shows the next one), the browser still
+// fires a *synthetic* click event afterward at the same x/y coordinate.
+// Because every screen in this app is centered/full-viewport, a button
+// on the *new* screen is often sitting at that exact same spot — so the
+// synthetic click fires it too, and one tap silently advances two
+// screens. iOS Safari suppresses this compatibility click more
+// consistently, which is why the bug only shows up on Android.
+//
+// bindTap() fixes this two ways:
+//  1. e.preventDefault() on touchstart stops the synthetic click from
+//     ever being dispatched.
+//  2. A short-lived "fired" guard blocks a genuine double-fire (e.g. a
+//     browser that still sends both events) from running the handler
+//     twice.
+// Use bindTap(el, handler) everywhere instead of the old onclick +
+// addEventListener('touchstart', ...) pair.
+// ----------------------------------------------------------------------
+function bindTap(el, handler) {
+  if (!el) return;
+  let fired = false;
+  const run = (e) => {
+    if (fired) return;
+    fired = true;
+    if (e && e.type === 'touchstart' && e.cancelable) e.preventDefault();
+    handler(e);
+    setTimeout(() => { fired = false; }, 400);
+  };
+  el.addEventListener('touchstart', run, { passive: false });
+  el.addEventListener('click', run);
+}
+
+// ----------------------------------------------------------------------
 // KA_ASSETS_AVAILABLE
 // Only filenames listed here have a real "_ka" translated version
 // uploaded to the site. Everything else falls straight back to the
@@ -926,12 +965,7 @@ window.onload = () => {
 
     const setupDialButton = (btnElement, digit) => {
         if (!btnElement) return;
-        const handler = (e) => {
-            if (e) e.preventDefault();
-            addDigit(digit);
-        };
-        btnElement.addEventListener('click', handler);
-        btnElement.addEventListener('touchstart', handler);
+        bindTap(btnElement, () => addDigit(digit));
     };
 
     setupDialButton(dialBtn0, '0');
@@ -945,8 +979,7 @@ window.onload = () => {
     setupDialButton(dialBtn8, '8');
     setupDialButton(dialBtn9, '9');
 
-    deleteBtnDial.addEventListener('click', deleteDigit);
-    deleteBtnDial.addEventListener('touchstart', deleteDigit);
+    bindTap(deleteBtnDial, deleteDigit);
 
     checkCallButtonState();
     dialDisplay.textContent = "112/108";
@@ -979,7 +1012,6 @@ window.onload = () => {
     // could otherwise tell it which language was chosen).
     document.querySelectorAll(".langOption").forEach((btn) => {
         const choose = (e) => {
-            if (e) e.preventDefault();
             const lang = btn.getAttribute("data-lang");
             try { localStorage.setItem("cprLang", lang); } catch (err) { /* ignore */ }
             if (lang === currentLang) {
@@ -989,8 +1021,7 @@ window.onload = () => {
                 window.location.reload();
             }
         };
-        btn.addEventListener('click', choose);
-        btn.addEventListener('touchstart', choose);
+        bindTap(btn, choose);
     });
 
    const handleConsent = () => {
@@ -1016,8 +1047,7 @@ window.onload = () => {
             }
         });
     };
-    consentBtn.onclick = handleConsent;
-    consentBtn.addEventListener('touchstart', handleConsent);
+    bindTap(consentBtn, handleConsent);
 
     // Prefill with last-used name, if any
     try {
@@ -1035,8 +1065,7 @@ window.onload = () => {
         nameEntry.style.display = "none";
         begin1.style.display = "flex";
     };
-    nameNext.onclick = handleNameNext;
-    nameNext.addEventListener('touchstart', handleNameNext);
+    bindTap(nameNext, handleNameNext);
 
   const handleBegin = () => {
         userStartAudio();
@@ -1052,15 +1081,13 @@ window.onload = () => {
         cardboardTutorial.style.display = "flex";
       //logSession();
     };
-    beginBtn.onclick = handleBegin;
-    beginBtn.addEventListener('touchstart', handleBegin);
+    bindTap(beginBtn, handleBegin);
 
     const handleTutorialDone = () => {
         cardboardTutorial.style.display = "none";
         gender.style.display = "flex";
     };
-    tutorialDoneBtn.onclick = handleTutorialDone;
-    tutorialDoneBtn.addEventListener('touchstart', handleTutorialDone);
+    bindTap(tutorialDoneBtn, handleTutorialDone);
 
     // Tapping the intro bubble used to jump straight to cpr5 (skipping
     // the whole check-danger/response/breathing flow). It now first asks
@@ -1074,8 +1101,7 @@ window.onload = () => {
         introAudio.currentTime = 0;
         protocolCheckModal.style.display = "flex";
     };
-    beginBubBtn.onclick = handleBubbleShortcut;
-    beginBubBtn.addEventListener('touchstart', handleBubbleShortcut);
+    bindTap(beginBubBtn, handleBubbleShortcut);
 
     // "Yes" — same shortcut as before: skip straight to cpr5.
     const handleProtocolYes = () => {
@@ -1089,8 +1115,7 @@ window.onload = () => {
         cprC4aud.stop();
         cprBeginaud.play();
     };
-    protocolYesBtn.onclick = handleProtocolYes;
-    protocolYesBtn.addEventListener('touchstart', handleProtocolYes);
+    bindTap(protocolYesBtn, handleProtocolYes);
 
     // "No, I am not aware of this protocol" — swap to the second modal,
     // which explains the protocol and offers to start proper training.
@@ -1098,8 +1123,7 @@ window.onload = () => {
         protocolCheckModal.style.display = "none";
         protocolInfoModal.style.display = "flex";
     };
-    protocolNoBtn.onclick = handleProtocolNo;
-    protocolNoBtn.addEventListener('touchstart', handleProtocolNo);
+    bindTap(protocolNoBtn, handleProtocolNo);
 
     // "Start" on the second modal — begin the full training flow from
     // checkdanger, same entry point as the normal "Start" button on the
@@ -1111,8 +1135,7 @@ window.onload = () => {
         checkdanger.style.display = "flex";
         checkdAudio.play();
     };
-    protocolStartBtn.onclick = handleProtocolStart;
-    protocolStartBtn.addEventListener('touchstart', handleProtocolStart);
+    bindTap(protocolStartBtn, handleProtocolStart);
 
     const handleRaja = () => {
         genderState = 1;
@@ -1121,8 +1144,7 @@ window.onload = () => {
         gender.style.display = "none";
         intro.style.display = "flex";
     };
-    rajaBtn.onclick = handleRaja;
-    rajaBtn.addEventListener('touchstart', handleRaja);
+    bindTap(rajaBtn, handleRaja);
 
     const handleRani = () => {
         genderState = 0;
@@ -1131,8 +1153,7 @@ window.onload = () => {
         gender.style.display = "none";
         intro.style.display = "flex";
     };
-    raniBtn.onclick = handleRani;
-    raniBtn.addEventListener('touchstart', handleRani);
+    bindTap(raniBtn, handleRani);
 
     const handleStart = () => {
         intro.style.display = "none";
@@ -1141,8 +1162,7 @@ window.onload = () => {
         introAudio.currentTime = 0;
         checkdAudio.play();
     };
-    startBtn.onclick = handleStart;
-    startBtn.addEventListener('touchstart', handleStart);
+    bindTap(startBtn, handleStart);
 
     const handleDyes = () => {
         checkdAudio.pause();
@@ -1160,8 +1180,7 @@ window.onload = () => {
             did_spongy_respond.play();
         }, 8000);
     };
-    dyesBtn.onclick = handleDyes;
-    dyesBtn.addEventListener('touchstart', handleDyes);
+    bindTap(dyesBtn, handleDyes);
 
     const handleDno = () => {
         checkdAudio.pause();
@@ -1171,8 +1190,7 @@ window.onload = () => {
         dnotsafeq.style.display = "flex";
       logSession();
     };
-    dnoBtn.onclick = handleDno;
-    dnoBtn.addEventListener('touchstart', handleDno);
+    bindTap(dnoBtn, handleDno);
 
     const handleNowSafe = () => {
         dnotsafeAudio.pause();
@@ -1188,8 +1206,7 @@ window.onload = () => {
             did_spongy_respond.play();
         }, 8000);
     };
-    nowsafeBtn.onclick = handleNowSafe;
-    nowsafeBtn.addEventListener('touchstart', handleNowSafe);
+    bindTap(nowsafeBtn, handleNowSafe);
 
     const handleCantSafe = () => {
         dnotsafeAudio.pause();
@@ -1198,8 +1215,7 @@ window.onload = () => {
         dnotsafeq.style.display = "none";
         dcantsafe.style.display = "flex";
     };
-    cantsafeBtn.onclick = handleCantSafe;
-    cantsafeBtn.addEventListener('touchstart', handleCantSafe);
+    bindTap(cantsafeBtn, handleCantSafe);
 
     const handleNextP = () => {
         cantdsafe.pause();
@@ -1220,8 +1236,7 @@ window.onload = () => {
             }, 2000);
         }
     };
-    nextpBtn.onclick = handleNextP;
-    nextpBtn.addEventListener('touchstart', handleNextP);
+    bindTap(nextpBtn, handleNextP);
 
     const handleDPromisePress = () => {
         promisedaud.pause();
@@ -1231,8 +1246,7 @@ window.onload = () => {
         promisedrajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    dpromisepress.onclick = handleDPromisePress;
-    dpromisepress.addEventListener('touchstart', handleDPromisePress);
+    bindTap(dpromisepress, handleDPromisePress);
 
     const handleDRaniPromisePress = () => {
         promisedaud.pause();
@@ -1242,16 +1256,14 @@ window.onload = () => {
         promisedranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    dranipromisepress.onclick = handleDRaniPromisePress;
-    dranipromisepress.addEventListener('touchstart', handleDRaniPromisePress);
+    bindTap(dranipromisepress, handleDRaniPromisePress);
 
     const handleNext = () => {
         respondednextaud.play();
         awake.style.display = "none";
         responded.style.display = "flex";
     };
-    nextBtn.onclick = handleNext;
-    nextBtn.addEventListener('touchstart', handleNext);
+    bindTap(nextBtn, handleNext);
 
     const handleNextPR = () => {
         responded.style.display = "none";
@@ -1271,8 +1283,7 @@ window.onload = () => {
             }, 2000);
         }
     };
-    nextprBtn.onclick = handleNextPR;
-    nextprBtn.addEventListener('touchstart', handleNextPR);
+    bindTap(nextprBtn, handleNextPR);
 
     const handleRRaniPromisePress = () => {
         promisejingle.play();
@@ -1281,8 +1292,7 @@ window.onload = () => {
         promiserranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    rranipromisepress.onclick = handleRRaniPromisePress;
-    rranipromisepress.addEventListener('touchstart', handleRRaniPromisePress);
+    bindTap(rranipromisepress, handleRRaniPromisePress);
 
     const handleRRajaPromisePress = () => {
         promisejingle.play();
@@ -1291,8 +1301,7 @@ window.onload = () => {
         promiserrajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    rrajapromisepress.onclick = handleRRajaPromisePress;
-    rrajapromisepress.addEventListener('touchstart', handleRRajaPromisePress);
+    bindTap(rrajapromisepress, handleRRajaPromisePress);
 
     const handleRno = () => {
         userStartAudio();
@@ -1333,8 +1342,7 @@ window.onload = () => {
         }, 10000);
       
     };
-    rnoBtn.onclick = handleRno;
-    rnoBtn.addEventListener('touchstart', handleRno);
+    bindTap(rnoBtn, handleRno);
 
     const handleBno = () => {
         requestaedaud.play();
@@ -1344,8 +1352,7 @@ window.onload = () => {
         requestaed.style.display = "flex";
       
     };
-    bnoBtn.onclick = handleBno;
-    bnoBtn.addEventListener('touchstart', handleBno);
+    bindTap(bnoBtn, handleBno);
 
     const handleByes = () => {
         breathingtype.play();
@@ -1355,8 +1362,7 @@ window.onload = () => {
         checkbreathingtypeq.style.display = "flex";
       logSession();
     };
-    byesBtn.onclick = handleByes;
-    byesBtn.addEventListener('touchstart', handleByes);
+    bindTap(byesBtn, handleByes);
 
     const handleNormal = () => {
         breathingtype.pause();
@@ -1365,8 +1371,7 @@ window.onload = () => {
         checkbreathingtypeq.style.display = "none";
         normalbreathing.style.display = "flex";
     };
-    normalBtn.onclick = handleNormal;
-    normalBtn.addEventListener('touchstart', handleNormal);
+    bindTap(normalBtn, handleNormal);
 
     const handleAbnormal = () => {
         breathingtype.pause();
@@ -1375,8 +1380,7 @@ window.onload = () => {
         checkbreathingtypeq.style.display = "none";
         requestaed.style.display = "flex";
     };
-    abnormalBtn.onclick = handleAbnormal;
-    abnormalBtn.addEventListener('touchstart', handleAbnormal);
+    bindTap(abnormalBtn, handleAbnormal);
 
     const handleNextV = () => {
         ifbreathnormalaud.stop();
@@ -1396,8 +1400,7 @@ window.onload = () => {
             }, 2000);
         }
     };
-    nextvBtn.onclick = handleNextV;
-    nextvBtn.addEventListener('touchstart', handleNextV);
+    bindTap(nextvBtn, handleNextV);
 
     const handleBRaniPromisePress = () => {
         promisebtaud.stop();
@@ -1406,8 +1409,7 @@ window.onload = () => {
         promisebranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    branipromisepress.onclick = handleBRaniPromisePress;
-    branipromisepress.addEventListener('touchstart', handleBRaniPromisePress);
+    bindTap(branipromisepress, handleBRaniPromisePress);
 
     const handleBrajaPromisePress = () => {
         promisejingle.play();
@@ -1416,8 +1418,7 @@ window.onload = () => {
         promisebrajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    bpromisepress.onclick = handleBrajaPromisePress;
-    bpromisepress.addEventListener('touchstart', handleBrajaPromisePress);
+    bindTap(bpromisepress, handleBrajaPromisePress);
 
     const handleNextA = () => {
         call112.play();
@@ -1426,8 +1427,7 @@ window.onload = () => {
         requestaed.style.display = "none";
         dial112.style.display = "flex";
     };
-    nextaBtn.onclick = handleNextA;
-    nextaBtn.addEventListener('touchstart', handleNextA);
+    bindTap(nextaBtn, handleNextA);
 
     const handleCall = () => {
         if (callBtn.disabled) return;
@@ -1438,8 +1438,7 @@ window.onload = () => {
         dial112.style.display = "none";
         addspeaker.style.display = "flex";
     };
-    callBtn.onclick = handleCall;
-    callBtn.addEventListener('touchstart', handleCall);
+    bindTap(callBtn, handleCall);
 
     const handleSpeaker = () => {
         call112.pause();
@@ -1477,8 +1476,7 @@ window.onload = () => {
             });
         }, 15000);
     };
-    speakerbtn.onclick = handleSpeaker;
-    speakerbtn.addEventListener('touchstart', handleSpeaker);
+    bindTap(speakerbtn, handleSpeaker);
 
     const stopAllCPRAudio = () => {
         victimaud.stop();
@@ -1493,32 +1491,28 @@ window.onload = () => {
         stopAllCPRAudio();
         goToCprStep(1);
     };
-    nextc1.onclick = handleNextC1;
-    nextc1.addEventListener('touchstart', handleNextC1);
+    bindTap(nextc1, handleNextC1);
 
     const handleNextC2 = () => {
         clearTimeout(t1); clearTimeout(t2);
         stopAllCPRAudio();
         goToCprStep(2);
     };
-    nextc2.onclick = handleNextC2;
-    nextc2.addEventListener('touchstart', handleNextC2);
+    bindTap(nextc2, handleNextC2);
 
     const handleNextC3 = () => {
         clearTimeout(t1); clearTimeout(t2);
         stopAllCPRAudio();
         goToCprStep(3);
     };
-    nextc3.onclick = handleNextC3;
-    nextc3.addEventListener('touchstart', handleNextC3);
+    bindTap(nextc3, handleNextC3);
 
     const handleNextC4 = () => {
         clearTimeout(t1); clearTimeout(t2);
         stopAllCPRAudio();
         goToCprStep(4);
     };
-    nextc4.onclick = handleNextC4;
-    nextc4.addEventListener('touchstart', handleNextC4);
+    bindTap(nextc4, handleNextC4);
 
     const handleStartCPR = () => {
         clearTimeout(t1); clearTimeout(t2); clearTimeout(cprStepTimer);
@@ -1528,8 +1522,7 @@ window.onload = () => {
         currentState = "play";
         play_start_time = millis();
     };
-    startcpr.onclick = handleStartCPR;
-    startcpr.addEventListener('touchstart', handleStartCPR);
+    bindTap(startcpr, handleStartCPR);
 
     // --- End Screen Buttons ---
 
@@ -1542,8 +1535,7 @@ window.onload = () => {
     showPromiseScreen();
 
 };
-    nextwinBtn.onclick = handleNextWin;
-    nextwinBtn.addEventListener('touchstart', handleNextWin);
+    bindTap(nextwinBtn, handleNextWin);
 
     const handleWRaniPromisePress = () => {
         promisewtaud.stop();
@@ -1552,8 +1544,7 @@ window.onload = () => {
         promisewranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    wranipromisepress.onclick = handleWRaniPromisePress;
-    wranipromisepress.addEventListener('touchstart', handleWRaniPromisePress);
+    bindTap(wranipromisepress, handleWRaniPromisePress);
 
     const handleWPromisePress = () => {
         promisewtaud.stop();
@@ -1562,22 +1553,19 @@ window.onload = () => {
         promisewrajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    wpromisepress.onclick = handleWPromisePress;
-    wpromisepress.addEventListener('touchstart', handleWPromisePress);
+    bindTap(wpromisepress, handleWPromisePress);
 
     const handlePracticeAgainRaja = () => {
         console.log("raja.....");
         practiceChoiceModal.style.display = "flex";
     };
-    practiceagainbtnraja.onclick = handlePracticeAgainRaja;
-    practiceagainbtnraja.addEventListener('touchstart', handlePracticeAgainRaja);
+    bindTap(practiceagainbtnraja, handlePracticeAgainRaja);
 
     const handlePracticeAgainRani = () => {
         console.log("rani.....");
         practiceChoiceModal.style.display = "flex";
     };
-    practiceagainbtnrani.onclick = handlePracticeAgainRani;
-    practiceagainbtnrani.addEventListener('touchstart', handlePracticeAgainRani);
+    bindTap(practiceagainbtnrani, handlePracticeAgainRani);
 
     // "Practice again" choice modal: take a whole new case (back to
     // begin1, same as before) or skip straight to compressions-only
@@ -1597,8 +1585,7 @@ window.onload = () => {
         callBtn.disabled = true;
         callBtn.style.opacity = 0.5;
     };
-    newCaseBtn.onclick = handleNewCase;
-    newCaseBtn.addEventListener('touchstart', handleNewCase);
+    bindTap(newCaseBtn, handleNewCase);
 
     // "Only compressions" no longer jumps straight in — it now asks
     // whether the learner wants BPM feedback visible during the drill.
@@ -1606,8 +1593,7 @@ window.onload = () => {
         practiceChoiceModal.style.display = "none";
         bpmChoiceModal.style.display = "flex";
     };
-    onlyCompressionsBtn.onclick = handleOnlyCompressions;
-    onlyCompressionsBtn.addEventListener('touchstart', handleOnlyCompressions);
+    bindTap(onlyCompressionsBtn, handleOnlyCompressions);
 
     // Shared logic (previously inline in handleOnlyCompressions) that
     // actually starts the compressions-only flow. `withBpm` controls
@@ -1636,13 +1622,8 @@ window.onload = () => {
         callBtn.style.opacity = 0.5;
     };
 
-    const handleWithBpm = () => startOnlyCompressions(true);
-    withBpmBtn.onclick = handleWithBpm;
-    withBpmBtn.addEventListener('touchstart', handleWithBpm);
-
-    const handleWithoutBpm = () => startOnlyCompressions(false);
-    withoutBpmBtn.onclick = handleWithoutBpm;
-    withoutBpmBtn.addEventListener('touchstart', handleWithoutBpm);
+    bindTap(withBpmBtn, () => startOnlyCompressions(true));
+    bindTap(withoutBpmBtn, () => startOnlyCompressions(false));
 
     // ========================================
     // CHECK PROGRESS BUTTON
@@ -1677,23 +1658,12 @@ window.onload = () => {
         if (progressChartModeAll) progressChartModeAll.classList.toggle("active", mode === "all");
         renderProgressChart();
     };
-    if (progressChartModeRecent) {
-        progressChartModeRecent.addEventListener('click', () => setChartMode("recent"));
-        progressChartModeRecent.addEventListener('touchstart', () => setChartMode("recent"));
-    }
-    if (progressChartModeAll) {
-        progressChartModeAll.addEventListener('click', () => setChartMode("all"));
-        progressChartModeAll.addEventListener('touchstart', () => setChartMode("all"));
-    }
+    if (progressChartModeRecent) bindTap(progressChartModeRecent, () => setChartMode("recent"));
+    if (progressChartModeAll) bindTap(progressChartModeAll, () => setChartMode("all"));
 
-    if (checkProgressBtnRaja) {
-        checkProgressBtnRaja.addEventListener('click', () => openProgress(promisesealedraja));
-        checkProgressBtnRaja.addEventListener('touchstart', () => openProgress(promisesealedraja));
-    }
-    if (checkProgressBtnRani) {
-        checkProgressBtnRani.addEventListener('click', () => openProgress(promisesealedrani));
-        checkProgressBtnRani.addEventListener('touchstart', () => openProgress(promisesealedrani));
-    }
+    if (checkProgressBtnRaja) bindTap(checkProgressBtnRaja, () => openProgress(promisesealedraja));
+    if (checkProgressBtnRani) bindTap(checkProgressBtnRani, () => openProgress(promisesealedrani));
+
     if (progressBackBtn) {
         const closeProgress = () => {
             progressScreen.style.display = "none";
@@ -1703,13 +1673,12 @@ window.onload = () => {
                 promisesealedrani.style.display = "flex";
             }
         };
-        progressBackBtn.addEventListener('click', closeProgress);
-        progressBackBtn.addEventListener('touchstart', closeProgress);
+        bindTap(progressBackBtn, closeProgress);
     }
 
     if (progressClearBtn) {
         const clearProgress = (e) => {
-            if (e) e.preventDefault();
+            if (e && e.cancelable) e.preventDefault();
             const ok = window.confirm("Clear all saved progress for " + (userName || "Friend") + "? This can't be undone.");
             if (!ok) return;
             try {
@@ -1721,8 +1690,7 @@ window.onload = () => {
             }
             renderProgressChart();
         };
-        progressClearBtn.addEventListener('click', clearProgress);
-        progressClearBtn.addEventListener('touchstart', clearProgress);
+        bindTap(progressClearBtn, clearProgress);
     }
 
 
@@ -1735,9 +1703,7 @@ window.onload = () => {
     showPromiseScreen();
 
 };
-    
-    nextambBtn.onclick = handleNextAmb;
-    nextambBtn.addEventListener('touchstart', handleNextAmb);
+    bindTap(nextambBtn, handleNextAmb);
 
     const handleAmbRaniPromisePress = () => {
         test.play();
@@ -1746,8 +1712,7 @@ window.onload = () => {
         promiseambranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    promiseambranipress.onclick = handleAmbRaniPromisePress;
-    promiseambranipress.addEventListener('touchstart', handleAmbRaniPromisePress);
+    bindTap(promiseambranipress, handleAmbRaniPromisePress);
 
     const handleAmbRajaPromisePress = () => {
         test.play();
@@ -1756,8 +1721,7 @@ window.onload = () => {
         promiseambrajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    promiseambrajapress.onclick = handleAmbRajaPromisePress;
-    promiseambrajapress.addEventListener('touchstart', handleAmbRajaPromisePress);
+    bindTap(promiseambrajapress, handleAmbRajaPromisePress);
 
 
     const handleNextAed = () => {
@@ -1768,8 +1732,7 @@ window.onload = () => {
     showPromiseScreen();
 
 };
-    nextaedBtn.onclick = handleNextAed;
-    nextaedBtn.addEventListener('touchstart', handleNextAed);
+    bindTap(nextaedBtn, handleNextAed);
 
     const handleAedRaniPromisePress = () => {
         promisewtaud.stop();
@@ -1778,8 +1741,7 @@ window.onload = () => {
         promiseaedranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    promiseaedranipress.onclick = handleAedRaniPromisePress;
-    promiseaedranipress.addEventListener('touchstart', handleAedRaniPromisePress);
+    bindTap(promiseaedranipress, handleAedRaniPromisePress);
 
     const handleAedRajaPromisePress = () => {
         promisewtaud.stop();
@@ -1788,8 +1750,7 @@ window.onload = () => {
         promiseaedrajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    promiseaedrajapress.onclick = handleAedRajaPromisePress;
-    promiseaedrajapress.addEventListener('touchstart', handleAedRajaPromisePress);
+    bindTap(promiseaedrajapress, handleAedRajaPromisePress);
 
 
     const handleNextLateInactive = () => {
@@ -1800,8 +1761,7 @@ window.onload = () => {
     showPromiseScreen();
 
 };
-    nextlateinactiveBtn.onclick = handleNextLateInactive;
-    nextlateinactiveBtn.addEventListener('touchstart', handleNextLateInactive);
+    bindTap(nextlateinactiveBtn, handleNextLateInactive);
 
     const handleLateInactiveRaniPromisePress = () => {
         promiseiltaud.stop();
@@ -1810,8 +1770,7 @@ window.onload = () => {
         promiselateinactiveranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    promiselateinactiveranipress.onclick = handleLateInactiveRaniPromisePress;
-    promiselateinactiveranipress.addEventListener('touchstart', handleLateInactiveRaniPromisePress);
+    bindTap(promiselateinactiveranipress, handleLateInactiveRaniPromisePress);
 
     const handleLateInactiveRajaPromisePress = () => {
         promisejingle.play();
@@ -1820,8 +1779,7 @@ window.onload = () => {
         promiselateinactiverajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    promiselateinactiverajapress.onclick = handleLateInactiveRajaPromisePress;
-    promiselateinactiverajapress.addEventListener('touchstart', handleLateInactiveRajaPromisePress);
+    bindTap(promiselateinactiverajapress, handleLateInactiveRajaPromisePress);
 
     // NOTE: showCompressionScore() is now called inside handle_performance()
     // so these button handlers no longer need to call it themselves.
@@ -1835,8 +1793,7 @@ window.onload = () => {
     showPromiseScreen();
 
 };
-    nextlatefastBtn.onclick = handleNextLateFast;
-    nextlatefastBtn.addEventListener('touchstart', handleNextLateFast);
+    bindTap(nextlatefastBtn, handleNextLateFast);
 
     const handleLateFastRaniPromisePress = () => {
         promisejingle.play();
@@ -1845,8 +1802,7 @@ window.onload = () => {
         promiselatefastranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    promiselatefastranipress.onclick = handleLateFastRaniPromisePress;
-    promiselatefastranipress.addEventListener('touchstart', handleLateFastRaniPromisePress);
+    bindTap(promiselatefastranipress, handleLateFastRaniPromisePress);
 
     const handleLateFastRajaPromisePress = () => {
         promisejingle.play();
@@ -1855,8 +1811,7 @@ window.onload = () => {
         promiselatefastrajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    promiselatefastrajapress.onclick = handleLateFastRajaPromisePress;
-    promiselatefastrajapress.addEventListener('touchstart', handleLateFastRajaPromisePress);
+    bindTap(promiselatefastrajapress, handleLateFastRajaPromisePress);
 
 
     const handleNextLateSlow = () => {
@@ -1867,8 +1822,7 @@ window.onload = () => {
     showPromiseScreen();
 
 };
-    nextlateslowBtn.onclick = handleNextLateSlow;
-    nextlateslowBtn.addEventListener('touchstart', handleNextLateSlow);
+    bindTap(nextlateslowBtn, handleNextLateSlow);
 
     const handleLateslowRajaPromisePress = () => {
         promisejingle.play();
@@ -1877,8 +1831,7 @@ window.onload = () => {
         promiselateslowrajapress.style.display = "none";
         promisesealedraja.style.display = "flex";
     };
-    promiselateslowrajapress.onclick = handleLateslowRajaPromisePress;
-    promiselateslowrajapress.addEventListener('touchstart', handleLateslowRajaPromisePress);
+    bindTap(promiselateslowrajapress, handleLateslowRajaPromisePress);
 
     const handleLateslowRaniPromisePress = () => {
         promisejingle.play();
@@ -1887,8 +1840,7 @@ window.onload = () => {
         promiselateslowranipress.style.display = "none";
         promisesealedrani.style.display = "flex";
     };
-    promiselateslowranipress.onclick = handleLateslowRaniPromisePress;
-    promiselateslowranipress.addEventListener('touchstart', handleLateslowRaniPromisePress);
+    bindTap(promiselateslowranipress, handleLateslowRaniPromisePress);
 
 }; // End of window.onload
 
@@ -2480,4 +2432,3 @@ function touchStarted() {
         return false;
     }
 }
-
